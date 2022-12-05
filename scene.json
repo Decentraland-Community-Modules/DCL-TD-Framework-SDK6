@@ -1,0 +1,41 @@
+{
+  "display": {
+    "title": "DCL Tower Defence Creation Kit",
+    "description": "Demo implementation scene.",
+    "navmapThumbnail": "images/scene-thumbnail.png",
+    "favicon": "favicon_asset"
+  },
+  "contact": {
+    "name": "Alex Pazder",
+    "email": "thecryptotrader69@gmail.com"
+  },
+  "owner": "",
+  "scene": {
+    "parcels": [
+      "0,0","0,1","0,2",
+      "1,0","1,1","1,2",
+      "2,0","2,1","2,2"
+    ],
+    "base": "0,0"
+  },
+  "requiredPermissions": [],
+  "main": "bin/game.js",
+  "tags": [],
+  "spawnPoints": [
+    {
+      "name": "spawn1",
+      "default": true,
+      "position": {
+        "x": 24,
+        "y": 0,
+        "z": 2
+      },
+      "cameraTarget": {
+        "x": 24,
+        "y": 2,
+        "z": 8
+      }
+    }
+  ],
+  "featureToggles": {}
+}
