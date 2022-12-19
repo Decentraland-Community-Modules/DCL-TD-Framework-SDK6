@@ -4,64 +4,10 @@
     create a node path and tower foundations (found within td-core/settings).
 */
 
-import { TowerDefenceManager } from "./td-core/game-manager";
+import { GameManager } from "./td-core/game-manager";
 
 //prepare tower defence game manager
-const tdGameManager:TowerDefenceManager = new TowerDefenceManager();
-
-//interaction button
-const buttonStart:Entity = new Entity();
-buttonStart.addComponent(new BoxShape());
-buttonStart.addComponent(new Transform
-({
-    position: new Vector3(22,0.5,15),
-    scale: new Vector3(0.2,1,0.2),
-    rotation: new Quaternion().setEuler(0,0,0)
-}));
-buttonStart.addComponent
-(
-    new OnPointerDown
-    (
-        (e) =>
-        {
-            tdGameManager.StartGame();
-        },
-        {
-          button: ActionButton.ANY,
-          showFeedback: true,
-          hoverText: "[E] START GAME",
-          distance: 32
-        }
-    )
-);
-engine.addEntity(buttonStart);
-
-//interaction button
-const buttonWave:Entity = new Entity();
-buttonWave.addComponent(new BoxShape());
-buttonWave.addComponent(new Transform
-({
-    position: new Vector3(26,0.5,15),
-    scale: new Vector3(0.2,1,0.2),
-    rotation: new Quaternion().setEuler(0,0,0)
-}));
-buttonWave.addComponent
-(
-    new OnPointerDown
-    (
-        (e) =>
-        {
-            tdGameManager.WaveStart();
-        },
-        {
-          button: ActionButton.ANY,
-          showFeedback: true,
-          hoverText: "[E] START WAVE",
-          distance: 32
-        }
-    )
-);
-engine.addEntity(buttonWave);
+const tdGameManager:GameManager = new GameManager();
 
 //prepare game environment
 const environ:Entity = new Entity();

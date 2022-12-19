@@ -28,8 +28,8 @@ export class WaypointManager extends Entity
         return this.SpawnPoints.getItem(this.spawnPointIndex);
     }
 
-    //returns the next waypoint in the chain based on the given index
-    GetNextWaypoint(index:number)
+    //returns the next waypoint in the chain based on the given index and seed
+    GetNextWaypoint(index:number, seed:number):undefined|Waypoint
     {
         //if target length is zero, waypoint is end of path
         if(this.WaypointDict.getItem(index.toString()).Target.length == 0)
@@ -38,8 +38,34 @@ export class WaypointManager extends Entity
         }
 
         //randomize and return path selection
-        var pathRand:number = Math.floor(Math.random()*this.WaypointDict.getItem(index.toString()).Target.length);
+        var pathRand:number = (seed+index)%this.WaypointDict.getItem(index.toString()).Target.length;
         return this.WaypointDict.getItem(this.WaypointDict.getItem(index.toString()).Target[pathRand]);
+    }
+
+    //returns the total distance of the waypoint path that will be travelled by a unit based on the given spawn and seed
+    GetRouteDistance(spawn:number, seed:number):number
+    {
+        var distance:number = 0;
+        var waypointPrev:Waypoint;
+        var waypointCur:undefined|Waypoint = this.WaypointDict.getItem(spawn.toString());
+
+        //process path
+        while(true)
+        {
+            //ensure entry waypoint is value
+            if(waypointCur == undefined) { return -1; }
+
+            //get next waypoint pair
+            waypointPrev = waypointCur;
+            waypointCur = this.GetNextWaypoint(waypointPrev.Index, seed);
+
+            //reached end of path
+            if(waypointCur == undefined) { return distance; }
+
+            //add path distance
+            distance += Math.abs(Vector3.Distance(waypointPrev.getComponent(Transform).position, waypointCur.getComponent(Transform).position));
+            //log("calc: "+distance.toString())
+        }
     }
 
     //constructor

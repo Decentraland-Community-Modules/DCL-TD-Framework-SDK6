@@ -10,136 +10,148 @@
 */
 export const configPathing =
 [
-    //path 1
+    /*
+    //distance test set
     //  end-point
     {
         Index:  0,
         Type: 2,
         Target: [],
         Scale:  [1, 0.02, 1],
-        Position: [25.9, 0.10, 26],
+        Position: [30, 0.10, 25],
         Rotation: [0, 0, 0],
     },
+    //  mid
     {
         Index:  1,
         Type: 0,
         Target: [0],
         Scale:  [1, 0.02, 1],
-        Position: [31.8, 0.10, 26],
+        Position: [20, 0.10, 25],
         Rotation: [0, 0, 0],
     },
+    //  spawn
+    {
+        Index:  2,
+        Type: 1,
+        Target: [1],
+        Scale:  [1, 0.02, 1],
+        Position: [10, 0.10, 25],
+        Rotation: [0, 0, 0],
+    },*/
+
+    
+    //  end-point
+    {
+        Index:  0,
+        Type: 2,
+        Target: [],
+        Scale:  [1, 0.02, 1],
+        Position: [35.9, 0.10, 33],
+        Rotation: [0, 0, 0],
+    },
+    //  split neck
+    {
+        Index:  1,
+        Type: 0,
+        Target: [0],
+        Scale:  [1, 0.02, 1],
+        Position: [30, 0.10, 33],
+        Rotation: [0, 0, 0],
+    },
+    //  split south
     {
         Index:  2,
         Type: 0,
         Target: [1],
         Scale:  [1, 0.02, 1],
-        Position: [31.8, 0.10, 18],
+        Position: [30, 0.10, 29],
         Rotation: [0, 0, 0],
     },
-    //  split - spawn
     {
         Index:  3,
-        Type: 0,    //spawn
+        Type: 0, 
         Target: [2],
         Scale:  [1, 0.02, 1],
-        Position: [27.9, 0.10, 18],
+        Position: [18, 0.10, 29],
         Rotation: [0, 0, 0],
     },
-    //  split - forward
+    //  spawn lane south
     {
         Index:  4,
         Type: 0,
-        Target: [2],
+        Target: [3],
         Scale:  [1, 0.02, 1],
-        Position: [31.8, 0.10, 12],
+        Position: [18, 0.10, 27],
         Rotation: [0, 0, 0],
     },
-    //  final mouth
     {
         Index:  5,
-        Type: 0,
-        Target: [4,11],
+        Type: 1,
+        Target: [4],
         Scale:  [1, 0.02, 1],
-        Position: [24.8, 0.10, 12],
+        Position: [10.1, 0.10, 27],
         Rotation: [0, 0, 0],
     },
-    //  middle spawn
+    //  split north
     {
         Index:  6,
-        Type: 1,
-        Target: [5],
+        Type: 0,
+        Target: [1],
         Scale:  [1, 0.02, 1],
-        Position: [24.8, 0.10, 8.1],
+        Position: [30, 0.10, 37],
         Rotation: [0, 0, 0],
     },
-    //path 2
-    //  end-point
     {
         Index:  7,
-        Type: 2,
-        Target: [],
+        Type: 0,
+        Target: [6],
         Scale:  [1, 0.02, 1],
-        Position: [21.9, 0.10, 26],
+        Position: [18, 0.10, 37],
         Rotation: [0, 0, 0],
     },
+    //  split neck 2
     {
         Index:  8,
         Type: 0,
-        Target: [7],
+        Target: [7, 3],
         Scale:  [1, 0.02, 1],
-        Position: [18, 0.10, 26],
+        Position: [18, 0.10, 33],
         Rotation: [0, 0, 0],
     },
+    //  split neck 3
     {
         Index:  9,
         Type: 0,
         Target: [8],
         Scale:  [1, 0.02, 1],
-        Position: [18, 0.10, 20],
+        Position: [14, 0.10, 33],
         Rotation: [0, 0, 0],
     },
-    //  branch - spawn
+    //  split north path
     {
         Index:  10,
-        Type: 0,    //spawn
-        Target: [9],
-        Scale:  [1, 0.02, 1],
-        Position: [23.9, 0.10, 20],
-        Rotation: [0, 0, 0],
-    },
-    //  branch - straight
-    {
-        Index:  11,
         Type: 0,
         Target: [9],
         Scale:  [1, 0.02, 1],
-        Position: [18, 0.10, 12],
+        Position: [14, 0.10, 39],
         Rotation: [0, 0, 0],
     },
-    //  branch - spawn 1
+    {
+        Index:  11,
+        Type: 1,    //spawn
+        Target: [10],
+        Scale:  [1, 0.02, 1],
+        Position: [10.1, 0.10, 39],
+        Rotation: [0, 0, 0],
+    },
+    //  split straight path
     {
         Index:  12,
         Type: 1,    //spawn
-        Target: [11],
+        Target: [9],
         Scale:  [1, 0.02, 1],
-        Position: [10.1, 0.10, 12],
+        Position: [10.1, 0.10, 33],
         Rotation: [0, 0, 0],
-    },
-    //  branch - spawn 2 lane
-    {
-        Index:  13,
-        Type: 0,
-        Target: [11],
-        Scale:  [1, 0.02, 1],
-        Position: [18, 0.10, 8],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Index:  14,
-        Type: 1,    //spawn
-        Target: [13],
-        Scale:  [1, 0.02, 1],
-        Position: [14.1, 0.10, 8],
-        Rotation: [0, 0, 0],
-    },
+    }
 ]

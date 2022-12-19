@@ -15,51 +15,18 @@
 import { MenuGroup2D } from "src/utilities/menu-group-2D";
 import { MenuGroup3D } from "src/utilities/menu-group-3D";
 import { DifficultyData } from "./data/difficulty-data";
+import { dataTowers } from "./data/tower-data";
 import { EnemyManager } from "./enemy-manager";
 import { EnemyWaveGenerator, EnemyWave, EnemyWaveUnit } from "./enemy-wave";
+import { EnemyWaveDisplay } from "./enemy-wave-display";
+import { GameState } from "./game-states";
 import { WaypointManager } from "./map-pathing";
-//state class for tower defence scene
-export class GameState
-{
-    //whether the system has been initialized
-    //  some components are not fully set up until the first match is called
-    initialized:boolean = false;
-    public static INSTANCE:GameState;
-
-    //current game state
-    //  0 - idle
-    //  1 - active, in between waves
-    //  2 - active, wave on-going, spawning on-going
-    //  3 - active, wave on-going, spawning completed
-    //  4 - game over, win
-    //  5 - game over, loss
-    stateCur:number = 0;
-    static stateStrings:string[] =
-    [
-        "Idle",
-        "Game Active: Start Wave",
-        "Game Active: Wave Active",
-        "Game Active: Wave Active",
-        "Game Over: Victory",
-        "Game Over: Defeat"
-    ]
-
-    //difficulty
-    difficultyCur:number = 2;
-
-    //player health
-    playerHealth:number = 0;
-
-    constructor()
-    {
-        GameState.INSTANCE = this;
-    }
-}
+import { TowerFoundation } from "./tower-entity";
+import { TowerManager } from "./tower-manager";
 //management class for tower defence scene
-export class TowerDefenceManager extends Entity
+export class GameManager extends Entity
 {
-    isDebugging:boolean = true;
-    public static INSTANCE:TowerDefenceManager; 
+    public static INSTANCE:GameManager; 
 
     //current game state
     gameState:GameState
@@ -187,7 +154,7 @@ export class TowerDefenceManager extends Entity
         this.menuGroup2D.AdjustTextObject("WaveNext", "TextValue", 3, new Vector2(1,1));
         */
     }
-    //  2D controller
+    //  2D game controller
     private menuControllerSetup()
     {
         //CONTROLLER HUD
@@ -235,12 +202,12 @@ export class TowerDefenceManager extends Entity
         this.menuGroup2D.AddImageObject("Difficulty", "ImgIncrease", 15, true);
         this.menuGroup2D.AdjustImageObject("Difficulty", "ImgIncrease", 2, new Vector2(2,1));
         this.menuGroup2D.AdjustImageObject("Difficulty", "ImgIncrease", 3, new Vector2(4, 0.25), false);
-        this.menuGroup2D.GetMenuImageObject("Difficulty", "ImgIncrease").onClick = new OnClick(() => { this.setDifficulty(this.gameState.difficultyCur+1); });
+        this.menuGroup2D.GetMenuImageObject("Difficulty", "ImgIncrease").onClick = new OnPointerDown(() => { this.setDifficulty(this.gameState.difficultyCur+1); });
         //      object - decrease
         this.menuGroup2D.AddImageObject("Difficulty", "ImgDecrease", 16, true);
         this.menuGroup2D.AdjustImageObject("Difficulty", "ImgDecrease", 2, new Vector2(0,1));
         this.menuGroup2D.AdjustImageObject("Difficulty", "ImgDecrease", 3, new Vector2(4, 0.25), false);
-        this.menuGroup2D.GetMenuImageObject("Difficulty", "ImgDecrease").onClick = new OnClick(() => { this.setDifficulty(this.gameState.difficultyCur-1); });
+        this.menuGroup2D.GetMenuImageObject("Difficulty", "ImgDecrease").onClick = new OnPointerDown(() => { this.setDifficulty(this.gameState.difficultyCur-1); });
         //  start game
         //      object
         this.menuGroup2D.AddMenuObject("contStartGame", "menuController");
@@ -251,7 +218,7 @@ export class TowerDefenceManager extends Entity
         this.menuGroup2D.AddImageObject("contStartGame", "Img", 9, true);
         this.menuGroup2D.AdjustImageObject("contStartGame", "Img", 2, new Vector2(1,1));
         this.menuGroup2D.AdjustImageObject("contStartGame", "Img", 3, new Vector2(3, 0.35), true);
-        this.menuGroup2D.GetMenuImageObject("contStartGame", "Img").onClick = new OnClick(() => { this.StartGame(); });
+        this.menuGroup2D.GetMenuImageObject("contStartGame", "Img").onClick = new OnPointerDown(() => { this.GameStart(); });
         //  start wave
         //      object
         this.menuGroup2D.AddMenuObject("contWaveGame", "menuController");
@@ -262,7 +229,7 @@ export class TowerDefenceManager extends Entity
         this.menuGroup2D.AddImageObject("contWaveGame", "Img", 2, true);
         this.menuGroup2D.AdjustImageObject("contWaveGame", "Img", 2, new Vector2(1,1));
         this.menuGroup2D.AdjustImageObject("contWaveGame", "Img", 3, new Vector2(3, 0.35), true);
-        this.menuGroup2D.GetMenuImageObject("contWaveGame", "Img").onClick = new OnClick(() => { this.WaveStart(); });
+        this.menuGroup2D.GetMenuImageObject("contWaveGame", "Img").onClick = new OnPointerDown(() => { this.WaveStart(); });
         //      text
         this.menuGroup2D.AddMenuText("contWaveGame", "TextTitle", "<Start Wave>");
         this.menuGroup2D.AdjustTextDisplay("contWaveGame", "TextTitle", 0, 14);
@@ -277,14 +244,476 @@ export class TowerDefenceManager extends Entity
         this.menuGroup2D.AddImageObject("ResetGame", "Img", 2, true);
         this.menuGroup2D.AdjustImageObject("ResetGame", "Img", 2, new Vector2(1,1));
         this.menuGroup2D.AdjustImageObject("ResetGame", "Img", 3, new Vector2(3, 0.35), true);
-        this.menuGroup2D.GetMenuImageObject("ResetGame", "Img").onClick = new OnClick(() => { this.WaveStart(); });
+        this.menuGroup2D.GetMenuImageObject("ResetGame", "Img").onClick = new OnPointerDown(() => { this.GameStart(); });
         //      text
         this.menuGroup2D.AddMenuText("ResetGame", "TextTitle", "<Reset>");
         this.menuGroup2D.AdjustTextDisplay("ResetGame", "TextTitle", 0, 14);
         this.menuGroup2D.AdjustTextObject("ResetGame", "TextTitle", 3, new Vector2(1,1));
     }
+    //  2D tower builder view
+    private menuTowerBuilderSetup()
+    {
+        //TOWER BUILDER
+        //  parent obj
+        this.menuGroup2D.AddMenuObject("towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("towerBuilder", 0, new Vector2(0,0));
+        this.menuGroup2D.AdjustMenuObject("towerBuilder", 1, new Vector2(425,450));
+        this.menuGroup2D.AdjustMenuObject("towerBuilder", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustMenuColour("towerBuilder", new Color4(0.2, 0.2, 0.2, 1));
+        //  title
+        //      object
+        this.menuGroup2D.AddMenuObject("title", "towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("title", 0, new Vector2(0,-5));
+        this.menuGroup2D.AdjustMenuObject("title", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("title", "Img", 1, true);
+        this.menuGroup2D.AdjustImageObject("title", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("title", "Img", 3, new Vector2(0, 0.4), true);
+        //      title
+        this.menuGroup2D.AddMenuText("title", "Text", "BUILD TOWER");
+        this.menuGroup2D.AdjustTextDisplay("title", "Text", 0, 34);
+        this.menuGroup2D.AdjustTextObject("title", "Text", 0, new Vector2(-30,0));
+        //  close button
+        //      image
+        this.menuGroup2D.AddImageObject("title", "closeImg", 4, true);
+        this.menuGroup2D.AdjustImageObject("title", "closeImg", 0, new Vector2(-6,0));
+        this.menuGroup2D.AdjustImageObject("title", "closeImg", 2, new Vector2(2,1));
+        this.menuGroup2D.AdjustImageObject("title", "closeImg", 3, new Vector2(5, 0.2), false);
+        this.menuGroup2D.GetMenuImageObject("title", "closeImg").width = 67;
+        this.menuGroup2D.GetMenuImageObject("title", "closeImg").height = 67;
+        this.menuGroup2D.GetMenuImageObject("title", "closeImg").onClick = new OnPointerDown(() => { this.SetTowerBuilderState(false); });
+        //      title
+        this.menuGroup2D.AddMenuText("title", "closeText", "X");
+        this.menuGroup2D.AdjustTextDisplay("title", "closeText", 0, 50);
+        this.menuGroup2D.AdjustTextObject("title", "closeText", 0, new Vector2(170,0));
+        //  content
+        //      object
+        this.menuGroup2D.AddMenuObject("content", "towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("content", 0, new Vector2(0,-90));
+        this.menuGroup2D.AdjustMenuObject("content", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("content", "Img", 4, true);
+        this.menuGroup2D.AdjustImageObject("content", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("content", "Img", 3, new Vector2(5, 1.4), true);
+        //      tower name
+        this.menuGroup2D.AddMenuText("content", "nameText", "TOWER_NAME");
+        this.menuGroup2D.AdjustTextDisplay("content", "nameText", 0, 28);
+        this.menuGroup2D.AdjustTextObject("content", "nameText", 0, new Vector2(0,-35));
+        this.menuGroup2D.AdjustTextObject("content", "nameText", 1, new Vector2(400,0));
+        this.menuGroup2D.AdjustTextObject("content", "nameText", 2, new Vector2(1,0));
+        //cost
+        //      text
+        this.menuGroup2D.AddMenuText("content", "costText", "Cost:");
+        this.menuGroup2D.AdjustTextDisplay("content", "costText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "costText", 0, new Vector2(0,-50));
+        this.menuGroup2D.AdjustTextObject("content", "costText", 1, new Vector2(100,30));
+        this.menuGroup2D.AdjustTextObject("content", "costText", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("content", "costText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "costValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "costValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "costValue", 0, new Vector2(0,-50));
+        this.menuGroup2D.AdjustTextObject("content", "costValue", 1, new Vector2(100,30));
+        this.menuGroup2D.AdjustTextObject("content", "costValue", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("content", "costValue", 3, new Vector2(2,1));
+        //desc
+        //      text
+        this.menuGroup2D.AddMenuText("content", "descText", "desc");
+        this.menuGroup2D.AdjustTextDisplay("content", "descText", 0, 18);
+        this.menuGroup2D.AdjustTextObject("content", "descText", 0, new Vector2(0,-85));
+        this.menuGroup2D.AdjustTextObject("content", "descText", 1, new Vector2(375,0));
+        this.menuGroup2D.AdjustTextObject("content", "descText", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("content", "descText", 3, new Vector2(1,0));
+        //tower range 
+        //      text
+        this.menuGroup2D.AddMenuText("content", "rangeText", "Range:");
+        this.menuGroup2D.AdjustTextDisplay("content", "rangeText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rangeText", 0, new Vector2(30,80));
+        this.menuGroup2D.AdjustTextObject("content", "rangeText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rangeText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rangeText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "rangeValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "rangeValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rangeValue", 0, new Vector2(107,80));
+        this.menuGroup2D.AdjustTextObject("content", "rangeValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rangeValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rangeValue", 3, new Vector2(0,1));
+        //attack speed
+        //      text
+        this.menuGroup2D.AddMenuText("content", "rofText", "Rate Of Fire:");
+        this.menuGroup2D.AdjustTextDisplay("content", "rofText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rofText", 0, new Vector2(30,50));
+        this.menuGroup2D.AdjustTextObject("content", "rofText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rofText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rofText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "rofValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "rofValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rofValue", 0, new Vector2(165,50));
+        this.menuGroup2D.AdjustTextObject("content", "rofValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rofValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rofValue", 3, new Vector2(0,1));
+        //effect
+        //      text
+        this.menuGroup2D.AddMenuText("content", "effectText", "Effect:");
+        this.menuGroup2D.AdjustTextDisplay("content", "effectText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "effectText", 0, new Vector2(30,20));
+        this.menuGroup2D.AdjustTextObject("content", "effectText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "effectText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "effectText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "effectValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "effectValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "effectValue", 0, new Vector2(105,20));
+        this.menuGroup2D.AdjustTextObject("content", "effectValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "effectValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "effectValue", 3, new Vector2(0,1));
+        //tower damage 
+        //      text
+        this.menuGroup2D.AddMenuText("content", "dmgText", "Damage:");
+        this.menuGroup2D.AdjustTextDisplay("content", "dmgText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "dmgText", 0, new Vector2(240,80));
+        this.menuGroup2D.AdjustTextObject("content", "dmgText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "dmgText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "dmgText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "dmgValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "dmgValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "dmgValue", 0, new Vector2(337.5,80));
+        this.menuGroup2D.AdjustTextObject("content", "dmgValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "dmgValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "dmgValue", 3, new Vector2(0,1));
+        //tower pen 
+        //      text
+        this.menuGroup2D.AddMenuText("content", "penText", "Pen:");
+        this.menuGroup2D.AdjustTextDisplay("content", "penText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "penText", 0, new Vector2(240,50));
+        this.menuGroup2D.AdjustTextObject("content", "penText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "penText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "penText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "penValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "penValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "penValue", 0, new Vector2(290,50));
+        this.menuGroup2D.AdjustTextObject("content", "penValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "penValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "penValue", 3, new Vector2(0,1));
+        //tower rend 
+        //      text
+        this.menuGroup2D.AddMenuText("content", "rendText", "Rend:");
+        this.menuGroup2D.AdjustTextDisplay("content", "rendText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 0, new Vector2(240,20));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("content", "rendValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("content", "rendValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rendValue", 0, new Vector2(305,20));
+        this.menuGroup2D.AdjustTextObject("content", "rendValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rendValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rendValue", 3, new Vector2(0,1));
+        //  button build tower
+        //      object
+        this.menuGroup2D.AddMenuObject("towerBuild", "towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("towerBuild", 0, new Vector2(0,-380));
+        this.menuGroup2D.AdjustMenuObject("towerBuild", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("towerBuild", "Img", 2, true);
+        this.menuGroup2D.AdjustImageObject("towerBuild", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("towerBuild", "Img", 3, new Vector2(3,0.65), true);
+        this.menuGroup2D.GetMenuImageObject("towerBuild", "Img").onClick = new OnPointerDown(() => { this.TowerBuild(); });
+        //      title
+        this.menuGroup2D.AddMenuText("towerBuild", "TextValue", "BUILD");
+        this.menuGroup2D.AdjustTextDisplay("towerBuild", "TextValue", 0, 40);
+        this.menuGroup2D.AdjustTextObject("towerBuild", "TextValue", 0, new Vector2(0,0));
+        //  button next
+        //      object
+        this.menuGroup2D.AddMenuObject("towerNext", "towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("towerNext", 0, new Vector2(160,-380));
+        this.menuGroup2D.AdjustMenuObject("towerNext", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("towerNext", "Img", 15, true);
+        this.menuGroup2D.AdjustImageObject("towerNext", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("towerNext", "Img", 3, new Vector2(4,0.65), true);
+        this.menuGroup2D.GetMenuImageObject("towerNext", "Img").onClick = new OnPointerDown(() => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex+1); });
+        //  button prev
+        //      object
+        this.menuGroup2D.AddMenuObject("towerPrev", "towerBuilder");
+        this.menuGroup2D.AdjustMenuObject("towerPrev", 0, new Vector2(-160,-380));
+        this.menuGroup2D.AdjustMenuObject("towerPrev", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("towerPrev", "Img", 16, true);
+        this.menuGroup2D.AdjustImageObject("towerPrev", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("towerPrev", "Img", 3, new Vector2(4,0.65), true);
+        this.menuGroup2D.GetMenuImageObject("towerPrev", "Img").onClick = new OnPointerDown(() => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex-1); });
 
-    //  how to play
+        //menu off at start
+        this.SetTowerBuilderState(false);
+    }
+    towerDefinitionIndex:number = 0;
+    towerSelectionIndex:number = 0;
+    //  sets visibility of tower builder
+    public SetTowerBuilderState(state:boolean)
+    {
+        this.menuGroup2D.GetMenuObject("towerBuilder").rect.visible = state;
+    }
+    //  redraws tower builder, displaying the tower def of given index
+    public UpdateTowerBuilderDisplay(index:number)
+    {
+        //leash value to valid targets, with wrap around
+        if(index < 0) { this.towerDefinitionIndex = dataTowers.length-1; }
+        else if(index >= dataTowers.length) { this.towerDefinitionIndex = 0; }
+        else { this.towerDefinitionIndex = index; }
+
+        if(GameState.TowerDebugging) { log("displaying def "+this.towerDefinitionIndex.toString()+" in build menu"); }
+
+        //update showcase details
+        this.menuGroup2D.GetMenuObjectText("content", "nameText").value = dataTowers[this.towerDefinitionIndex].DisplayName;
+        this.menuGroup2D.GetMenuObjectText("content", "descText").value = dataTowers[this.towerDefinitionIndex].DisplayDesc;
+        this.menuGroup2D.GetMenuObjectText("content", "costValue").value = dataTowers[this.towerDefinitionIndex].ValueCost.toString();
+        this.menuGroup2D.GetMenuObjectText("content", "dmgValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackDamage.toString();
+        this.menuGroup2D.GetMenuObjectText("content", "penValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackPenetration.toString();
+        this.menuGroup2D.GetMenuObjectText("content", "rendValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackRend.toString();
+        this.menuGroup2D.GetMenuObjectText("content", "rangeValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackRange.toString();
+        this.menuGroup2D.GetMenuObjectText("content", "rofValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackIntervalFull.toString();
+    }
+
+    //2D tower upgrade view
+    private menuTowerUpgraderSetup()
+    {
+        //TOWER UPGRADE
+        //  parent obj
+        this.menuGroup2D.AddMenuObject("towerUpgrader");
+        this.menuGroup2D.AdjustMenuObject("towerUpgrader", 0, new Vector2(0,0));
+        this.menuGroup2D.AdjustMenuObject("towerUpgrader", 1, new Vector2(425,450));
+        this.menuGroup2D.AdjustMenuObject("towerUpgrader", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustMenuColour("towerUpgrader", new Color4(0.2, 0.2, 0.2, 1));
+        //  title
+        //      object
+        this.menuGroup2D.AddMenuObject("uTitle", "towerUpgrader");
+        this.menuGroup2D.AdjustMenuObject("uTitle", 0, new Vector2(0,-5));
+        this.menuGroup2D.AdjustMenuObject("uTitle", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("uTitle", "Img", 1, true);
+        this.menuGroup2D.AdjustImageObject("uTitle", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("uTitle", "Img", 3, new Vector2(0, 0.4), true);
+        //      text
+        this.menuGroup2D.AddMenuText("uTitle", "Text", "UPGRADE TOWER");
+        this.menuGroup2D.AdjustTextDisplay("uTitle", "Text", 0, 34);
+        this.menuGroup2D.AdjustTextObject("uTitle", "Text", 0, new Vector2(-30,0));
+        //  close button
+        //      image
+        this.menuGroup2D.AddImageObject("uTitle", "closeImg", 4, true);
+        this.menuGroup2D.AdjustImageObject("uTitle", "closeImg", 0, new Vector2(-6,0));
+        this.menuGroup2D.AdjustImageObject("uTitle", "closeImg", 2, new Vector2(2,1));
+        this.menuGroup2D.AdjustImageObject("uTitle", "closeImg", 3, new Vector2(5, 0.2), false);
+        this.menuGroup2D.GetMenuImageObject("uTitle", "closeImg").width = 67;
+        this.menuGroup2D.GetMenuImageObject("uTitle", "closeImg").height = 67;
+        this.menuGroup2D.GetMenuImageObject("uTitle", "closeImg").onClick = new OnPointerDown(() => { this.SetTowerUpgraderState(false); });
+        //      text
+        this.menuGroup2D.AddMenuText("uTitle", "closeText", "X");
+        this.menuGroup2D.AdjustTextDisplay("uTitle", "closeText", 0, 50);
+        this.menuGroup2D.AdjustTextObject("uTitle", "closeText", 0, new Vector2(170,0));
+        //  content
+        //      object
+        this.menuGroup2D.AddMenuObject("uContent", "towerUpgrader");
+        this.menuGroup2D.AdjustMenuObject("uContent", 0, new Vector2(0,-90));
+        this.menuGroup2D.AdjustMenuObject("uContent", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("uContent", "Img", 4, true);
+        this.menuGroup2D.AdjustImageObject("uContent", "Img", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("uContent", "Img", 3, new Vector2(5, 1.4), true);
+        //      tower name
+        this.menuGroup2D.AddMenuText("uContent", "nameText", "TOWER_NAME");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "nameText", 0, 28);
+        this.menuGroup2D.AdjustTextObject("uContent", "nameText", 0, new Vector2(0,-35));
+        this.menuGroup2D.AdjustTextObject("uContent", "nameText", 1, new Vector2(400,0));
+        this.menuGroup2D.AdjustTextObject("uContent", "nameText", 2, new Vector2(1,0));
+        //cost
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "costText", "Cost:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "costText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "costText", 0, new Vector2(0,-50));
+        this.menuGroup2D.AdjustTextObject("uContent", "costText", 1, new Vector2(100,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "costText", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("uContent", "costText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "costValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "costValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "costValue", 0, new Vector2(0,-50));
+        this.menuGroup2D.AdjustTextObject("uContent", "costValue", 1, new Vector2(100,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "costValue", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("uContent", "costValue", 3, new Vector2(2,1));
+        //desc
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "descText", "desc");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "descText", 0, 18);
+        this.menuGroup2D.AdjustTextObject("uContent", "descText", 0, new Vector2(0,-85));
+        this.menuGroup2D.AdjustTextObject("uContent", "descText", 1, new Vector2(375,0));
+        this.menuGroup2D.AdjustTextObject("uContent", "descText", 2, new Vector2(1,0));
+        this.menuGroup2D.AdjustTextObject("uContent", "descText", 3, new Vector2(1,0));
+        //tower range 
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "rangeText", "Range:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "rangeText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeText", 0, new Vector2(30,80));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "rangeValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "rangeValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeValue", 0, new Vector2(107,80));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "rangeValue", 3, new Vector2(0,1));
+        //attack speed
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "rofText", "Rate Of Fire:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "rofText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "rofText", 0, new Vector2(30,50));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "rofValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "rofValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "rofValue", 0, new Vector2(165,50));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "rofValue", 3, new Vector2(0,1));
+        //effect
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "effectText", "Effect:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "effectText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "effectText", 0, new Vector2(30,20));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "effectValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "effectValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "effectValue", 0, new Vector2(105,20));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "effectValue", 3, new Vector2(0,1));
+        //tower damage 
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "dmgText", "Damage:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "dmgText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgText", 0, new Vector2(240,80));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "dmgValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "dmgValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgValue", 0, new Vector2(337.5,80));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "dmgValue", 3, new Vector2(0,1));
+        //tower pen 
+        //      text
+        this.menuGroup2D.AddMenuText("uContent", "penText", "Pen:");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "penText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "penText", 0, new Vector2(240,50));
+        this.menuGroup2D.AdjustTextObject("uContent", "penText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "penText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "penText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "penValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "penValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "penValue", 0, new Vector2(290,50));
+        this.menuGroup2D.AdjustTextObject("uContent", "penValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "penValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "penValue", 3, new Vector2(0,1));
+        //tower rend 
+        //      text
+        this.menuGroup2D.AddMenuText("content", "rendText", "Rend:");
+        this.menuGroup2D.AdjustTextDisplay("content", "rendText", 0, 22);
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 0, new Vector2(240,20));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("content", "rendText", 3, new Vector2(0,1));
+        //      value
+        this.menuGroup2D.AddMenuText("uContent", "rendValue", "###");
+        this.menuGroup2D.AdjustTextDisplay("uContent", "rendValue", 0, 22);
+        this.menuGroup2D.AdjustTextObject("uContent", "rendValue", 0, new Vector2(305,20));
+        this.menuGroup2D.AdjustTextObject("uContent", "rendValue", 1, new Vector2(200,30));
+        this.menuGroup2D.AdjustTextObject("uContent", "rendValue", 2, new Vector2(0,2));
+        this.menuGroup2D.AdjustTextObject("uContent", "rendValue", 3, new Vector2(0,1));
+        //  range displayer
+        //      object
+        this.menuGroup2D.AddMenuObject("rangeView", "towerUpgrader");
+        this.menuGroup2D.AdjustMenuObject("rangeView", 0, new Vector2(-185,-125));
+        this.menuGroup2D.AdjustMenuObject("rangeView", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("rangeView", "rangeViewImg", 4, true);
+        this.menuGroup2D.AdjustImageObject("rangeView", "rangeViewImg", 0, new Vector2(-6,0));
+        this.menuGroup2D.AdjustImageObject("rangeView", "rangeViewImg", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("rangeView", "rangeViewImg", 3, new Vector2(5, 0), true);
+        this.menuGroup2D.GetMenuImageObject("rangeView", "rangeViewImg").width = 32;
+        this.menuGroup2D.GetMenuImageObject("rangeView", "rangeViewImg").height = 32;
+        this.menuGroup2D.GetMenuImageObject("rangeView", "rangeViewImg").onClick = new OnPointerDown(() => 
+        { 
+            this.towerManager.TowerFoundationDict.getItem(this.towerSelectionIndex.toString()).ToggleRangeIndicator(); 
+        });
+        //  deconstruct
+        //      object
+        this.menuGroup2D.AddMenuObject("deconstruct", "towerUpgrader");
+        this.menuGroup2D.AdjustMenuObject("deconstruct", 0, new Vector2(165,-125));
+        this.menuGroup2D.AdjustMenuObject("deconstruct", 2, new Vector2(1,0));
+        //      image
+        this.menuGroup2D.AddImageObject("deconstruct", "deconstructImg", 4, true);
+        this.menuGroup2D.AdjustImageObject("deconstruct", "deconstructImg", 0, new Vector2(-6,0));
+        this.menuGroup2D.AdjustImageObject("deconstruct", "deconstructImg", 2, new Vector2(1,1));
+        this.menuGroup2D.AdjustImageObject("deconstruct", "deconstructImg", 3, new Vector2(5, 0), true);
+        this.menuGroup2D.GetMenuImageObject("deconstruct", "deconstructImg").width = 32;
+        this.menuGroup2D.GetMenuImageObject("deconstruct", "deconstructImg").height = 32;
+        this.menuGroup2D.GetMenuImageObject("deconstruct", "deconstructImg").onClick = new OnPointerDown(() => 
+        { 
+            this.towerManager.ClearTower(this.towerSelectionIndex);
+            this.SetTowerUpgraderState(false);  
+        });
+
+        //menu off at start
+        this.SetTowerUpgraderState(false);
+    }
+    //  sets visibility of tower upgrader  
+    public SetTowerUpgraderState(state:boolean)
+    {
+        this.menuGroup2D.GetMenuObject("towerUpgrader").rect.visible = state;
+    }
+    //  redraws tower upgrader, displaying the tower foundation of the given location
+    //TODO: push access to this system down to the tower manager level
+    selectedTowerData:undefined|TowerFoundation;
+    public UpdateTowerUpgraderState(index:number)
+    {
+        this.selectedTowerData = this.towerManager.TowerFoundationDict.getItem(index.toString());
+        if(this.selectedTowerData != undefined)
+        {
+            if(GameState.TowerDebugging) { log("displaying def "+this.towerDefinitionIndex.toString()+" in upgrade menu"); }
+
+            //update showcase details
+            this.menuGroup2D.GetMenuObjectText("uContent", "nameText").value = dataTowers[this.selectedTowerData.TowerDef].DisplayName;
+            this.menuGroup2D.GetMenuObjectText("uContent", "descText").value = dataTowers[this.selectedTowerData.TowerDef].DisplayDesc;
+            this.menuGroup2D.GetMenuObjectText("uContent", "dmgValue").value = this.selectedTowerData.TowerSystem.attackDamage.toString();
+            this.menuGroup2D.GetMenuObjectText("uContent", "penValue").value = this.selectedTowerData.TowerSystem.attackPen.toString();
+            this.menuGroup2D.GetMenuObjectText("uContent", "rendValue").value = this.selectedTowerData.TowerSystem.attackRend.toString();
+            this.menuGroup2D.GetMenuObjectText("uContent", "rangeValue").value = this.selectedTowerData.TowerSystem.attackRange.toString();
+            this.menuGroup2D.GetMenuObjectText("uContent", "rofValue").value = this.selectedTowerData.TowerSystem.attackLength.toString();
+
+        }
+        
+    }
+
+    //  2D how to play
+    private menuHowToPlaySetup()
+    {
+
+    }
 
     //  updates for menu aspects
     setGameStateHUD()
@@ -362,7 +791,7 @@ export class TowerDefenceManager extends Entity
                     //select next difficulty
                     this.setDifficulty(this.gameState.difficultyCur+1);
 
-                    if(this.isDebugging) { log("game manager increasing difficulty: "+DifficultyData[this.gameState.difficultyCur].DisplayName); }
+                    if(GameState.ManagerDebugging) { log("game manager increasing difficulty: "+DifficultyData[this.gameState.difficultyCur].DisplayName); }
                 },
                 {
                     button: ActionButton.ANY,
@@ -392,7 +821,7 @@ export class TowerDefenceManager extends Entity
                     //select prev difficulty
                     this.setDifficulty(this.gameState.difficultyCur-1);
 
-                    if(this.isDebugging) { log("game manager decreasing difficulty: "+DifficultyData[this.gameState.difficultyCur].DisplayName); }
+                    if(GameState.ManagerDebugging) { log("game manager decreasing difficulty: "+DifficultyData[this.gameState.difficultyCur].DisplayName); }
                 },
                 {
                     button: ActionButton.ANY,
@@ -402,31 +831,89 @@ export class TowerDefenceManager extends Entity
                 }
             )
         );
-        //  primary action button (play/reset)
+        //  action button - play
         //      object
-        this.gameMenu.AddMenuObject("PrimaryAction", 2);
-        this.gameMenu.AdjustMenuObject("PrimaryAction", 0, new Vector3(1.6,2,0));
-        this.gameMenu.AdjustMenuObject("PrimaryAction", 0, new Vector3(0,2,0));
-        this.gameMenu.AdjustMenuObject("PrimaryAction", 1, new Vector3(0.5,0.5,1));
-        //      title text
-        this.gameMenu.AddMenuText("PrimaryAction", "PrimaryActionName", "PLAY");
-        this.gameMenu.AdjustTextDisplay("PrimaryAction", "PrimaryActionName", 0, 6);
-        this.gameMenu.AdjustTextObject("PrimaryAction", "PrimaryActionName", 0, new Vector3(0,0,0));
-        this.gameMenu.AdjustTextObject("PrimaryAction", "PrimaryActionName", 1, new Vector3(2,2,2));
-        //  primary action: play/reset game
-        this.gameMenu.GetMenuObject("PrimaryAction").addComponent
+        this.gameMenu.AddMenuObject("PlayAction", 2);
+        this.gameMenu.AdjustMenuObject("PlayAction", 0, new Vector3(1.6,2,0));
+        this.gameMenu.AdjustMenuObject("PlayAction", 0, new Vector3(-1.6,2,0));
+        this.gameMenu.AdjustMenuObject("PlayAction", 1, new Vector3(0.5,0.5,1));
+        //      text
+        this.gameMenu.AddMenuText("PlayAction", "PlayActionText", "PLAY");
+        this.gameMenu.AdjustTextDisplay("PlayAction", "PlayActionText", 0, 6);
+        this.gameMenu.AdjustTextObject("PlayAction", "PlayActionText", 0, new Vector3(0,0,0));
+        this.gameMenu.AdjustTextObject("PlayAction", "PlayActionText", 1, new Vector3(2,2,2));
+        //      click action: play/reset game
+        this.gameMenu.GetMenuObject("PlayAction").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
                 (e) =>
                 {
-                    this.StartGame();
+                    this.GameStart();
                 },
                 {
                     button: ActionButton.ANY,
                     showFeedback: true,
                     hoverText: "[E] Start Game",
+                    distance: 8
+                }
+            )
+        );
+        //  action button - reset
+        //      object
+        this.gameMenu.AddMenuObject("ResetAction", 2);
+        this.gameMenu.AdjustMenuObject("ResetAction", 0, new Vector3(1.6,2,0));
+        this.gameMenu.AdjustMenuObject("ResetAction", 0, new Vector3(1.6,2,0));
+        this.gameMenu.AdjustMenuObject("ResetAction", 1, new Vector3(0.5,0.5,1));
+        //      text
+        this.gameMenu.AddMenuText("ResetAction", "ResetActionText", "RESET");
+        this.gameMenu.AdjustTextDisplay("ResetAction", "ResetActionText", 0, 6);
+        this.gameMenu.AdjustTextObject("ResetAction", "ResetActionText", 0, new Vector3(0,0,0));
+        this.gameMenu.AdjustTextObject("ResetAction", "ResetActionText", 1, new Vector3(2,2,2));
+        //      click action: play/reset game
+        this.gameMenu.GetMenuObject("ResetAction").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) =>
+                {
+                    this.GameStart();
+                },
+                {
+                    button: ActionButton.ANY,
+                    showFeedback: true,
+                    hoverText: "[E] Reset Game",
+                    distance: 8
+                }
+            )
+        );
+        //  action button - start wave
+        //      object
+        this.gameMenu.AddMenuObject("WaveAction", 2);
+        this.gameMenu.AdjustMenuObject("WaveAction", 0, new Vector3(1.6,2,0));
+        this.gameMenu.AdjustMenuObject("WaveAction", 0, new Vector3(-1.6,2,0));
+        this.gameMenu.AdjustMenuObject("WaveAction", 1, new Vector3(0.5,0.5,1));
+        //      text
+        this.gameMenu.AddMenuText("WaveAction", "WaveActionText", "START WAVE");
+        this.gameMenu.AdjustTextDisplay("WaveAction", "WaveActionText", 0, 4);
+        this.gameMenu.AdjustTextObject("WaveAction", "WaveActionText", 0, new Vector3(0,0,0));
+        this.gameMenu.AdjustTextObject("WaveAction", "WaveActionText", 1, new Vector3(2,2,2));
+        //      click action: play/reset game
+        this.gameMenu.GetMenuObject("WaveAction").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) =>
+                {
+                    this.WaveStart();
+                },
+                {
+                    button: ActionButton.ANY,
+                    showFeedback: true,
+                    hoverText: "[E] Reset Game",
                     distance: 8
                 }
             )
@@ -449,15 +936,19 @@ export class TowerDefenceManager extends Entity
     gameTimerSystem:GameTimerSystem;
 
     //management components
-    waypointManager:WaypointManager;   
+    waypointManager:WaypointManager;
+    towerManager:TowerManager;
     enemyUnitManager:EnemyManager;
     enemyWaveManager:EnemyWaveGenerator;
+
+    //wave preview
+    enemyWavePreview:EnemyWaveDisplay;
 
     //constructor
     constructor()
     {
         super();
-        TowerDefenceManager.INSTANCE = this;
+        GameManager.INSTANCE = this;
         this.addComponent(new Transform
         ({
             position: new Vector3(0,0,0),
@@ -469,19 +960,21 @@ export class TowerDefenceManager extends Entity
 
         //2D menu
         this.menuGroup2D = new MenuGroup2D(this);
-        //  HUD
         this.menuHUDSetup2D();
-        //  controller
         this.menuControllerSetup();
+        this.menuTowerBuilderSetup();
+        this.menuTowerUpgraderSetup();
+        this.menuHowToPlaySetup();
 
         //3D menu
         this.gameMenu = new MenuGroup3D(this);
         this.menuSetup3D();
-        this.gameMenu.getComponent(Transform).position = new Vector3(24,0,16);
+        this.gameMenu.getComponent(Transform).position = new Vector3(24,0,41);
+        this.gameMenu.getComponent(Transform).scale = new Vector3(0,0,0);   //hide until restructure
 
         //timer
         this.gameTimerSystem = new GameTimerSystem();
-        this.gameTimerSystem.SpawnEnemy = this.callbackSpawnEnemyUnit;
+        this.gameTimerSystem.SpawnEnemy = this.callbackEnemyUnitSpawn;
         this.gameTimerSystem.StartWave = this.callbackWaveStart;
         engine.addSystem(this.gameTimerSystem);
 
@@ -490,19 +983,34 @@ export class TowerDefenceManager extends Entity
         this.waypointManager = new WaypointManager();
         this.waypointManager.GenerateWaypoints();
         this.waypointManager.setParent(this);
+        //  towers
+        this.towerManager = new TowerManager();
+        this.towerManager.SelectTower = this.callbackTowerSelect;
+        this.towerManager.DamageEnemy = this.callbackEnemyUnitDamage;
+        this.towerManager.GenerateTowerFoundations();
+        this.towerManager.setParent(this);
         //  enemy units
         this.enemyUnitManager = new EnemyManager();
         this.enemyUnitManager.UnitAttack = this.callbackDamagePlayerBase;
-        this.enemyUnitManager.UnitDeath = this.callbackKilledEnemyUnit;
+        this.enemyUnitManager.UnitDeath = this.callbackEnemyUnitDeath;
         this.enemyUnitManager.setParent(this);
         //  enemy waves
         this.enemyWaveManager = new EnemyWaveGenerator();
+
+        //wave preview WIP
+        this.enemyWavePreview = new EnemyWaveDisplay();
+        //this.enemyWavePreview.setParent(this);
+        //this.enemyWavePreview.getComponent(Transform).position = new Vector3(12, 0, 20);
 
         //set default difficulty
         this.setDifficulty(2);
 
         //add to engine
         engine.addEntity(this);
+
+        //start game by default
+        //  TODO: this should be disabled to stop unneeded pre-warming
+        this.GameStart();
     }
 
     //sets the game's current state
@@ -512,19 +1020,27 @@ export class TowerDefenceManager extends Entity
         this.gameState.stateCur = state;
         switch(this.gameState.stateCur)
         {
-            //0 - idle
+            //0 - idle/game not started
             case 0:
-                //set buttons
-                //  <start game> on
-                //  <start wave> off
+                //clean map
+                //  enemies
+                this.enemyUnitManager.ClearUnits();
+                //  towers
+                this.towerManager.ClearTowers();
 
-                //clean up any units remaining in-scene
-
+                //arrange buttons
+                engine.addEntity(this.gameMenu.GetMenuObject("PlayAction"));
+                engine.removeEntity(this.gameMenu.GetMenuObject("WaveAction"));
             break;
             //1 - active, in between waves
             case 1:
-                //clean up any units remaining in-scene
+                //clean map
+                //  enemies
+                this.enemyUnitManager.ClearUnits();
 
+                //arrange buttons
+                engine.removeEntity(this.gameMenu.GetMenuObject("PlayAction"));
+                engine.addEntity(this.gameMenu.GetMenuObject("WaveAction"));
             break;
             //2 - active, wave on-going, spawning on-going
             case 2:
@@ -536,12 +1052,23 @@ export class TowerDefenceManager extends Entity
             break;
             //4 - game over, win
             case 4:
+                //halt wave/spawning
+                this.gameTimerSystem.halted = true;
 
+                //remove enemies from map
+                this.enemyUnitManager.ClearUnits();
+                //  towers
+                this.towerManager.ClearTowers();
             break;
             //5 - game over, loss
             case 5:
+                //halt wave/spawning
+                this.gameTimerSystem.halted = true;
+
                 //remove enemies from map
                 this.enemyUnitManager.ClearUnits();
+                //  towers
+                this.towerManager.ClearTowers();
             break;
         }
         
@@ -557,8 +1084,9 @@ export class TowerDefenceManager extends Entity
     //starts the game, initializing all systems and setting the game stage
     //  to a neutral state. many of the game's systems are initialized here
     //  during the first load to reduce initial scene loading time.
-    StartGame()
+    GameStart()
     {
+        if(GameState.ManagerDebugging) { log("new game starting..."); }
         //first-run initialization
         if(!this.gameState.initialized)
         {
@@ -575,6 +1103,8 @@ export class TowerDefenceManager extends Entity
         this.enemyUnitManager.Initialize();
         //  waves
         this.enemyWaveManager.Initialize(this.gameState.difficultyCur);
+        //  towers
+        this.towerManager.ClearTowers();
 
         //reset timer system
         this.gameTimerSystem.Initialize();
@@ -587,20 +1117,83 @@ export class TowerDefenceManager extends Entity
 
         //set game state to active
         this.setGameState(1);
+        
+        if(GameState.ManagerDebugging) { log("new game started!"); }
+    }
+
+    //called when player interacts with a tower foundation object
+    //  opens the interaction menu for the given tower foundation
+    public callbackTowerSelect(index:number)
+    {
+        GameManager.INSTANCE.TowerSelect(index);
+    }
+    public TowerSelect(index:number) 
+    {
+        this.towerSelectionIndex = index;
+
+        //if tower has no construction, display builder
+        if(this.towerManager.TowerFoundationDict.getItem(index.toString()).TowerDef == -1)
+        {
+            if(GameState.TowerDebugging) { log("tower foundation selected: "+index.toString()+" (build menu)"); }
+
+            //activate menu
+            this.SetTowerBuilderState(true);
+            this.UpdateTowerBuilderDisplay(0);
+        }       
+        //if tower has construction, display upgrader
+        else
+        {
+            if(GameState.TowerDebugging) { log("tower foundation selected: "+index.toString()+" (upgrade menu)"); }
+
+            //activate menu
+            this.SetTowerUpgraderState(true);
+            this.UpdateTowerUpgraderState(this.towerManager.TowerFoundationDict.getItem(index.toString()).TowerDef);
+        }
+    }
+
+    //builds the currently selected tower def on the currently selected foundation
+    public TowerBuild()
+    {
+        if(GameState.TowerDebugging) { log("building tower "+this.towerDefinitionIndex.toString()+" on foundation "+this.towerSelectionIndex.toString()); }
+
+        //check player's money balance
+        /*if(this.gameState.playerMoney < dataTowers[this.towerDefinitionIndex].ValueCost)
+        {
+            if(GameState.TowerDebugging) { log("tower build failed: not enough player funding"); }
+            return;
+        }*/
+
+        //remove funding
+        this.gameState.playerMoney -= dataTowers[this.towerDefinitionIndex].ValueCost;
+
+        //construct tower
+        this.towerManager.BuildTower(this.towerSelectionIndex, this.towerDefinitionIndex);
+
+        //swap to upgrader menu
+        this.SetTowerBuilderState(false);
+        this.SetTowerUpgraderState(true);
+        this.UpdateTowerUpgraderState(this.towerSelectionIndex);
+    }
+
+    //removes the tower from the currently selected foundation
+    //  TODO: economy update, change from in-line to this callback for processing player money
+    public TowerClear()
+    {
+
     }
 
     //begins the next wave, spawning enemies
     callbackWaveStart()
     {
-        TowerDefenceManager.INSTANCE.WaveStart();
+        GameManager.INSTANCE.WaveStart();
     }
     WaveStart()
     {
-        if(this.isDebugging) log("starting wave "+this.enemyWaveManager.WaveCur+"...");
+        if(GameState.ManagerDebugging) log("starting wave "+this.enemyWaveManager.WaveCur+"...");
         //ensure game is between waves
-        if(this.gameState.stateCur != 1)
+        if(this.gameState.stateCur != 1 && this.gameState.stateCur != 3)
         {
-            if(this.isDebugging) log("failed: incorrect state ("+this.gameState.stateCur.toString()+")");
+            if(GameState.ManagerDebugging) log("failed: incorrect state ("+this.gameState.stateCur.toString()+")");
             return;
         }
 
@@ -618,38 +1211,37 @@ export class TowerDefenceManager extends Entity
         }
 
         //prime timer system
+        this.gameTimerSystem.Initialize();
         this.gameTimerSystem.halted = false;
-        this.gameTimerSystem.waveWaiting = false;
-        if(this.isDebugging) log("started wave "+this.enemyWaveManager.WaveCur+"!");
+        if(GameState.ManagerDebugging) log("started wave "+this.enemyWaveManager.WaveCur+" with "+this.enemyUnitManager.enemySizeRemaining+" enemies!");
     }
 
     //called when all units have been defeated
     WaveEnd()
     {
-        if(this.isDebugging) log("ending wave "+this.enemyWaveManager.WaveCur+"...");
+        if(GameState.ManagerDebugging) log("ending wave "+this.enemyWaveManager.WaveCur+"...");
         //check if there are waves remaining
         if(this.enemyWaveManager.WaveCur >= this.enemyWaveManager.WaveMax-1)
         {
 
         }
 
-        if(this.isDebugging) log("ended wave "+this.enemyWaveManager.WaveCur+"!");
+        if(GameState.ManagerDebugging) log("ended wave "+this.enemyWaveManager.WaveCur+"!");
 
         //push next wave
         this.enemyWaveManager.WaveCur++;
+
+        this.setGameState(1);
     }
 
     //creates an enemy unit based on the current wave
     unitLength:number = 0;
     unitIndex:number = 0;
     unitIndexTest:number = 0;
-    callbackSpawnEnemyUnit()
+    callbackEnemyUnitSpawn() { GameManager.INSTANCE.EnemyUnitSpawn(); }
+    public EnemyUnitSpawn()
     {
-        TowerDefenceManager.INSTANCE.SpawnEnemyUnit();
-    }
-    public SpawnEnemyUnit()
-    {
-        if(this.isDebugging) log("spawning enemy unit...");
+        if(GameState.EnemyDebugging) log("spawning enemy unit...");
 
         //get type of next unit, ensuring randomly selected unit has a count available
         this.unitLength = this.enemyWaveManager.enemyWaves[this.enemyWaveManager.WaveCur].enemyUnits.length;
@@ -687,12 +1279,12 @@ export class TowerDefenceManager extends Entity
                 this.gameTimerSystem.waveWaiting = true;
             }
 
-            if(this.isDebugging) { log("ERROR: attempting to create enemy unit for an empty wave"); }
+            log("ERROR: attempting to create enemy unit for an empty wave");
             return;
         } 
 
         //attempt to assign unit
-        const unitObj = this.enemyUnitManager.AssignEnemyUnit(0,this.enemyWaveManager.WaveCur);
+        var unitObj = this.enemyUnitManager.AssignEnemyUnit(0,this.enemyWaveManager.WaveCur);
         
         //check if unit was available for assignment
         if(unitObj != undefined)
@@ -718,33 +1310,62 @@ export class TowerDefenceManager extends Entity
             //update hud
             this.setUnitCount();
 
-            if(this.isDebugging) log("spawned enemy unit!");
+            if(GameState.EnemyDebugging) log("spawned enemy unit, ID:"+unitObj.index.toString());
         }
         else
         {
 
-            if(this.isDebugging) log("failed to spawn enemy unit, all units are reserved");
+            if(GameState.EnemyDebugging) log("failed to spawn enemy unit, all units are reserved");
         }
     }
 
-    //called when an enemy unit has been killed
-    callbackKilledEnemyUnit()
+    //called when an enemy unit has been damaged by a tower
+    callbackEnemyUnitDamage(enemyIndex:number, damage:number)
     {
-        TowerDefenceManager.INSTANCE.KilledEnemyUnit();
+        GameManager.INSTANCE.EnemyUnitDamage(enemyIndex, damage);
     }
-    KilledEnemyUnit()
+    EnemyUnitDamage(enemyIndex:number, damage:number)
     {
+        //remove unit object
+        this.enemyUnitManager.DamageUnit(enemyIndex, damage);
+    }
 
+    //called when an enemy unit has been killed
+    callbackEnemyUnitDeath(index:number)
+    {
+        GameManager.INSTANCE.EnemyUnitDeath(index);
+    }
+    EnemyUnitDeath(index:number)
+    {
+        //remove unit object
+        this.enemyUnitManager.ClearUnit(index);
+
+        //send death update to all towers
+        this.towerManager.TargetDeathCheck(index);
+
+        //update hud
+        //TODO: push to lower level call
+        this.enemyUnitManager.enemySizeCur--;
+        this.enemyUnitManager.enemySizeRemaining--;
+        this.setUnitCount();
+
+        //award points to player
+
+        //check for wave end
+        if(this.enemyUnitManager.enemySizeRemaining <= 0)
+        {
+            this.WaveEnd();
+        }
     }
 
     //called when the player's base takes damage
     callbackDamagePlayerBase()
     {
-        TowerDefenceManager.INSTANCE.DamagePlayerBase();
+        GameManager.INSTANCE.DamagePlayerBase();
     }
     DamagePlayerBase()
     {
-        if(this.isDebugging) log("player base damaged");
+        if(GameState.ManagerDebugging) log("player base damaged");
 
         //deal damage
         this.gameState.playerHealth--;
@@ -752,7 +1373,7 @@ export class TowerDefenceManager extends Entity
         //check if player's base is destroyed
         if(this.gameState.playerHealth <= 0)
         {
-            if(this.isDebugging) log("player base has been destroyed, ending game...");
+            if(GameState.ManagerDebugging) log("player base has been destroyed, ending game...");
             this.setGameState(5);
         }
         this.setLifeCount(this.gameState.playerHealth);
@@ -761,8 +1382,6 @@ export class TowerDefenceManager extends Entity
 //game timers used for delaying waves and spawns
 class GameTimerSystem implements ISystem
 {
-    isDebugging:boolean = true;
-
     //if true, waits for player interaction before starting a wave
     //  every 10 waves the player is provided with one of these periods to build up
     halted:boolean;

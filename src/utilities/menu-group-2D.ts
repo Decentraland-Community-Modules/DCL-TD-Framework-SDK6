@@ -133,7 +133,7 @@ export class MenuGroup2D extends Entity
         else tmp = new MenuObject2D(this.canvas, name);
 
         //disable click by default
-        tmp.rect.isPointerBlocker = false;
+        tmp.rect.isPointerBlocker = true;
 
         //register object to collections
         this.menuList.addItem(tmp);
