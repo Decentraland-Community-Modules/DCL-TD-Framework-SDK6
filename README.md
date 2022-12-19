@@ -2,6 +2,8 @@
 
 <- THIS KIT IS CURRENTLY UNDER CONSTRUCTION, SO BE PREPARED FOR A MESSY LAYOUT AND SOME UNDER OPTIMISED CODE ->
 
+![towerDefencePreviewGIF](https://user-images.githubusercontent.com/91359820/208510569-10964ea3-07d8-4f61-850d-9decf166c898.gif)
+
 The Tower Defence Creation Kit is a set of resources meant to be used for creators to easily build their own tower defence games in Decentraland. The kit simplifies the process of adding complex features (such as spawning/pathing/damaging enemies and building/upgrading towers) to a Decentraland scene.
 
 Features:
