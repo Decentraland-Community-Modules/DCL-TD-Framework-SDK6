@@ -4,32 +4,93 @@
 */
 export const configTower =
 [
+    //top left
     {
-        Position: [15, 0.10, 30],
+        Position: [9, 0.10, 21],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [20.5, 0.10, 31.5],
+        Position: [11, 0.10, 21],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [20.5, 0.10, 34.5],
+        Position: [11, 0.10, 23],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [27.5, 0.10, 31.5],
+        Position: [9, 0.10, 23],
+        Rotation: [0, 0, 0],
+    },
+
+    //top middle
+    {
+        Position: [15, 0.10, 23],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [27.5, 0.10, 34.5],
+        Position: [17, 0.10, 23],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [32.5, 0.10, 30.5],
+        Position: [15, 0.10, 21],
         Rotation: [0, 0, 0],
     },
     {
-        Position: [32.5, 0.10, 35.5],
+        Position: [17, 0.10, 21],
+        Rotation: [0, 0, 0],
+    },
+
+    //top right
+    {
+        Position: [21, 0.10, 23],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 23],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [21, 0.10, 21],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 21],
+        Rotation: [0, 0, 0],
+    },
+
+    //middle right
+    {
+        Position: [21, 0.10, 17],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 17],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [21, 0.10, 15],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 15],
+        Rotation: [0, 0, 0],
+    },
+
+    //lower right
+    {
+        Position: [21, 0.10, 11],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 11],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [21, 0.10, 9],
+        Rotation: [0, 0, 0],
+    },
+    {
+        Position: [23, 0.10, 9],
         Rotation: [0, 0, 0],
     },
 ]

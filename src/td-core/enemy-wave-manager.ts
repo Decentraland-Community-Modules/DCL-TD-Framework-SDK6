@@ -1,7 +1,4 @@
-import Dictionary, { List } from "src/utilities/collections";
-import { EnemyData } from "./data/enemy-data";
-
-/*      ENEMY WAVE
+/*      ENEMY WAVE MANAGER
     generates waves of enemies for the game to spawn in. the full
     list of waves to be used for a game are generated at the start
     of the game. this allows the player to view all upcoming waves
@@ -12,70 +9,75 @@ import { EnemyData } from "./data/enemy-data";
     are spawned. boss waves are also guarenteed to spawn every number
     of waves.
 */
-export class EnemyWaveGenerator
+import { GameState } from "./game-states";
+import { EnemyData } from "./data/enemy-data";
+export class EnemyWaveManager
 {
-    isDebugging:boolean = false;
+    //access pocketing
+    private static instance:undefined|EnemyWaveManager;
+    public static get Instance():EnemyWaveManager
+    {
+        //ensure instance is set
+        if(EnemyWaveManager.instance === undefined)
+        {
+            EnemyWaveManager.instance = new EnemyWaveManager();
+        }
 
-    //wave
-    //  current wave in game
-    WaveCur:number;
-    //  total number of waves in game
-    WaveMax:number = 30;
+        return EnemyWaveManager.instance;
+    }
 
     //values used to determine number of enemies in each wave
-    spawnCostBase:number = 8;
-    spawnCostGrowth:number = 0.75;
-    //amount of wavers between boss encounters
+    private spawnCostBase:number = 8;
+    private spawnCostGrowth:number = 0.75;
+    //number of wavers between boss encounters
     bossInterval:number = 5;
 
-    //all enemy waves, regenerated each game
-    enemyWaves:EnemyWave[];
+    //enemy waves, generated each game start
+    private enemyWaves:EnemyWave[] = [];
+    /**
+     * @returns wave definition at the given access index
+     */
+    GetEnemyWave(index:number):EnemyWave
+    {
+        return this.enemyWaves[index];
+    }
+    /**
+     * @returns wave definition of the current wave
+     */
+    GetEnemyWaveCurrent():EnemyWave
+    {
+        return this.enemyWaves[GameState.WaveCur];
+    }
 
     //enemy data keys by type
-    enemyTypes:number[][];
+    private enemyTypes:number[][] = [[],[],[],[]];
 
     //constructor
     constructor()
     {
-        this.WaveCur = 0;
-
         //pre-warm wave container
-        this.enemyWaves = [];
-        while(this.enemyWaves.length < this.WaveMax)
+        while(this.enemyWaves.length < GameState.WaveMax)
         {
             this.enemyWaves.push(new EnemyWave());
         }
 
         //create type-key dict for enemy defs
-        this.enemyTypes = [[],[],[],[]];
         for(var i:number=0; i<EnemyData.length; i++)
         {
             this.enemyTypes[EnemyData[i].SpawnType].push(i);
         }
     }
 
-    //prepares the system for use in a match
-    Initialize(difficulty:number)
+    /**
+     * generates new unit types and counts for all waves
+     */
+    GenerateWaves()
     {
-        if(this.isDebugging) log("wave manager initializing...");
-
-        //reset wave count
-        this.WaveCur = 0;
-
-        //regenerate waves
-        this.GenerateWaves(difficulty);
-
-        if(this.isDebugging) log("wave manager initializing!");
-    }
-
-    //generates all waves for match 
-    GenerateWaves(difficulty:number)
-    {
-        if(this.isDebugging) log("generating waves for difficulty"+difficulty.toString()+"...");
+        if(GameState.debuggingWave) log("generating waves for difficulty"+GameState.DifficultyCur.toString()+"...");
         //generate new waves
-        for(var i:number=0; i<this.WaveMax; i++)
+        for(var i:number=0; i<GameState.WaveMax; i++)
         {
-            if(this.isDebugging) log("generating wave "+i.toString()+"...");
+            if(GameState.debuggingWave) log("generating wave "+i.toString()+"...");
             
             //utility defines number of spawns per size
             var utility:number = this.spawnCostBase + (this.spawnCostGrowth*i);
@@ -106,7 +108,7 @@ export class EnemyWaveGenerator
             //  expensive bosses can sometimes slip through with 0 assigned units
             if(this.enemyWaves[i].enemyUnits[0].enemyCount == 0) { this.enemyWaves[i].enemyUnits[0].enemyCount = 1; }
             if(this.enemyWaves[i].enemyUnits[1].enemyCount == 0) { this.enemyWaves[i].enemyUnits[1].enemyCount = 1; }
-            if(this.isDebugging)
+            if(GameState.debuggingWave)
             {
                 var str:string = "generated wave "+i.toString()+", utility: "+utility.toString()+", type: "+type.toString();
                 for(var j:number=0; j<this.enemyWaves[i].enemyUnits.length; j++)
@@ -117,7 +119,7 @@ export class EnemyWaveGenerator
                 log(str);
             }
         }
-        if(this.isDebugging) log("generated waves!");
+        if(GameState.debuggingWave) log("generated waves!");
     }
 }
 //contains all enemy units to be spawned during a wave

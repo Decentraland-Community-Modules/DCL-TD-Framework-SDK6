@@ -8,14 +8,17 @@
     parented to those menu objects.
 
     image objects consume clicks be default, all other objects do not.
+
+    TODO: create methods to manipulate groupParent without direct access
 */
-import { ToggleComponent } from "@dcl/ecs-scene-utils";
 import { List, Dictionary } from "collections";
 @Component("MenuGroup2D")
-export class MenuGroup2D extends Entity
+export class MenuGroup2D
 {
-    //draw canvas
-    canvas:UICanvas = new UICanvas();
+    //single cavas is shared between all instances of menu groups 
+    private static canvas:undefined|UICanvas = undefined;
+    //parent object
+    public groupParent:UIContainerRect;
     //action object used to toggle main menu canvas
     //private menuToggleCanvas:UICanvas = new UICanvas();
     private menuToggleState:number = 0;
@@ -25,22 +28,24 @@ export class MenuGroup2D extends Entity
     private menuDict:Dictionary<MenuObject2D>;
 
     //constructor, takes in an entity that will be used when parenting
-    constructor(parent:Entity)
+    constructor()
     {
-        super();
+        //canvas init
+        if(MenuGroup2D.canvas == undefined)
+        {
+            MenuGroup2D.canvas = new UICanvas();
+        }
 
-        //add transform
-        this.setParent(parent);
-        this.addComponent(new Transform
-        ({
-            position: new Vector3(0,0,0),
-            scale: new Vector3(1,1,1),
-            rotation: new Quaternion().setEuler(0,0,0)
-        }));
+        //object
+        this.groupParent = new UIContainerRect(MenuGroup2D.canvas);
 
+        //initialize collections
+        this.menuList = new List<MenuObject2D>();
+        this.menuDict = new Dictionary<MenuObject2D>();
+/*
         //set up menu toggle
         //object
-        /*this.menuToggle = new UIImage(this.menuToggleCanvas, menuGroup2DReference.getImageSource(0));
+        this.menuToggle = new UIImage(this.menuToggleCanvas, menuGroup2DReference.getImageSource(0));
         this.menuToggle.isPointerBlocker = true;
         //location
         this.menuToggle.sourceLeft = menuGroup2DReference.sourceLocations[4][0];
@@ -62,34 +67,21 @@ export class MenuGroup2D extends Entity
             {
                 this.ToggleMenuState();
             }
-        )*/
-
-        //initialize collections
-        this.menuList = new List<MenuObject2D>();
-        this.menuDict = new Dictionary<MenuObject2D>();
+        )
+        */
+        
     }
 
     //toggles the current menu state
     public ToggleMenuState()
     {
-        if(this.menuToggleState == 0) this.SetMenuState(1);
-        else this.SetMenuState(0);
+        this.SetMenuState(!this.groupParent.visible);
     }
 
     //sets the state of the primary menu tree
-    public SetMenuState(state:number)
+    public SetMenuState(state:boolean)
     {
-        //enable menu
-        if(state == 0)
-        {
-            this.canvas.visible = true;
-        }
-        //disable menu
-        else
-        {
-            this.canvas.visible = false;
-        }
-        //this.menuToggleState = state;
+        this.groupParent.visible = state;
     }
 
     //menu toggle object
@@ -129,8 +121,8 @@ export class MenuGroup2D extends Entity
     {
         //create and prepare entities
         var tmp:MenuObject2D;
-        if(par != '') tmp = new MenuObject2D(this.canvas, name, this.menuDict.getItem(par).rect);
-        else tmp = new MenuObject2D(this.canvas, name);
+        if(par != '') tmp = new MenuObject2D( this.groupParent, name, this.menuDict.getItem(par).rect);
+        else tmp = new MenuObject2D( this.groupParent, name);
 
         //disable click by default
         tmp.rect.isPointerBlocker = true;
@@ -221,15 +213,15 @@ export class MenuGroup2D extends Entity
 
     //adds an uiImage object parented under the tagged menu object
     //  type is pulled from the 2d menu group reference sheet
-    public AddImageObject(nameObj:string, nameImg:string, type:number, isVisible:boolean=true)
+    public AddImageObject(nameObj:string, nameImg:string, image:number, type:number, isVisible:boolean=true)
     {
-        this.menuDict.getItem(nameObj).AddImage(nameImg, type, isVisible);
+        this.menuDict.getItem(nameObj).AddImage(nameImg, image, type, isVisible);
     }
 
     //changes a image object's settings
-    public AdjustImageObject(nameObj:string, nameImg:string, type:number, value:Vector2, overwrite:boolean=false)
+    public AdjustImageObject(nameObj:string, nameImg:string, image:number, type:number, value:Vector2, overwrite:boolean=false)
     {
-        this.menuDict.getItem(nameObj).AdjustImage(nameImg, type, value, overwrite);
+        this.menuDict.getItem(nameObj).AdjustImage(nameImg, image, type, value, overwrite);
     }
 
     //returns the requested menu object
@@ -375,21 +367,21 @@ export class MenuObject2D
     //prepares an uiImage object of the given type
     //  isVisible determines if the parental object's visibility 
     //  registered under the given name
-    public AddImage(name:string, type:number, isVisible:boolean)
+    public AddImage(name:string, image:number, type:number, isVisible:boolean)
     {
         //create and prepare text
-        var tmp:UIImage = new UIImage(this.rect, menuGroup2DReference.getImageSource(type));
+        var tmp:UIImage = new UIImage(this.rect, menuGroup2DReference.getImageSource(image));
         tmp.isPointerBlocker = true;
         this.rect.visible = isVisible;
         //  load source positioning
-        tmp.sourceLeft = menuGroup2DReference.getImageLocation(type, 0);
-        tmp.sourceTop = menuGroup2DReference.getImageLocation(type, 1);
+        tmp.sourceLeft = menuGroup2DReference.getImageLocation(image, type, 0);
+        tmp.sourceTop = menuGroup2DReference.getImageLocation(image, type, 1);
         //  load source sizing
-        tmp.sourceWidth = menuGroup2DReference.getImageSize(type, 0);
-        tmp.sourceHeight = menuGroup2DReference.getImageSize(type, 1);
+        tmp.sourceWidth = menuGroup2DReference.getImageSize(image, type, 0);
+        tmp.sourceHeight = menuGroup2DReference.getImageSize(image, type, 1);
         //  set image sizing (default 1/4 size)
-        tmp.width = menuGroup2DReference.getImageSize(type, 0);
-        tmp.height = menuGroup2DReference.getImageSize(type, 1);
+        tmp.width = menuGroup2DReference.getImageSize(image, type, 0);
+        tmp.height = menuGroup2DReference.getImageSize(image, type, 1);
         //  default positioning
         tmp.positionX = 0;
         tmp.positionY = 0;
@@ -411,7 +403,7 @@ export class MenuObject2D
     //  3->scale (based on source)
     //      result,x: size type
     //      result,y: scale
-    public AdjustImage(name:string, type:number, vect:Vector2, overwrite:boolean)
+    public AdjustImage(name:string, image:number, type:number, vect:Vector2, overwrite:boolean)
     {
         switch(type)
         {
@@ -438,13 +430,13 @@ export class MenuObject2D
                 }
             break;
             case 3:
-                this.imageDict.getItem(name).width = menuGroup2DReference.sourceSizes[Math.floor(vect.x)][0]*vect.y;
-                this.imageDict.getItem(name).height = menuGroup2DReference.sourceSizes[Math.floor(vect.x)][1]*vect.y;
+                this.imageDict.getItem(name).width = menuGroup2DReference.sourceSizes[image][Math.floor(vect.x)][0]*vect.y;
+                this.imageDict.getItem(name).height = menuGroup2DReference.sourceSizes[image][Math.floor(vect.x)][1]*vect.y;
 
                 if(overwrite)
                 {
-                    this.rect.width = (menuGroup2DReference.sourceSizes[Math.floor(vect.x)][0]*vect.y);
-                    this.rect.height = (menuGroup2DReference.sourceSizes[Math.floor(vect.x)][1]*vect.y);
+                    this.rect.width = (menuGroup2DReference.sourceSizes[image][Math.floor(vect.x)][0]*vect.y);
+                    this.rect.height = (menuGroup2DReference.sourceSizes[image][Math.floor(vect.x)][1]*vect.y);
                 }
             break;
         }
@@ -463,83 +455,106 @@ class menuGroup2DReference
     //texture sources
     static imageSources:Texture[] = 
     [
+        new Texture("images/menuDebugging.png"),
         new Texture("images/menuSpliceSheet.png")
     ];
-    static getImageSource(index:number):Texture
+    static getImageSource(image:number):Texture
     {
-        return menuGroup2DReference.imageSources[menuGroup2DReference.sourceTypes[index][0]];
+        //log("source: "+image)
+        return menuGroup2DReference.imageSources[image];
     }
-    static getImageLocation(index:number, type:number):number
+    static getImageLocation(image:number, index:number, type:number):number
     {
-        return menuGroup2DReference.sourceLocations[index][type];
+        //log("location: "+image)
+        return menuGroup2DReference.sourceLocations[image][index][type];
     }
-    static getImageSize(index:number, type:number):number
+    static getImageSize(image:number, index:number, type:number):number
     {
-        return menuGroup2DReference.sourceSizes[menuGroup2DReference.sourceTypes[index][1]][type];
+        //log("size: "+image+", "+index+", "+type)
+        //log("type: "+menuGroup2DReference.sourceTypes[image][index])
+        return menuGroup2DReference.sourceSizes[image][menuGroup2DReference.sourceTypes[image][index]][type];
     }
 
     //locations on-source for splice points, from top left of sheet to bottom right
-    //  [image_index][point type(0=x, 1=y)]
-    static sourceLocations:number[][] = 
+    //  [image_index][slice_index][point type(0=x, 1=y)]
+    static sourceLocations:number[][][] = 
     [
+        //menu backplate
+        [
+            [0,0],    //title
+        ],
         //menu sheet
-        //  empty
-        [0,500],    //title
-        [0,600],    //header
-        [750,600],  //medium
-        [1050,600], //small
-        [1050,0],   //square(ish)
-        //  text
-        [0,0],      //title
-        [0,200],    //header wave
-        [0,300],    //header enemies
-        [0,400],    //header money
-        [750,200],  //play
-        [1050,200], //close
-        [750,300],  //next medium
-        [1050,300], //back medium
-        [750,400],  //help medium
-        [1050,400], //repo
-        [1050,500], //next small
-        [1200,500], //back small
-        [1200,600], //help small
+        [
+            //  empty
+            [0,500],    //title
+            [0,600],    //header
+            [750,600],  //medium
+            [1050,600], //small
+            [1050,0],   //square(ish)
+            //  text
+            [0,0],      //title
+            [0,200],    //header wave
+            [0,300],    //header enemies
+            [0,400],    //header money
+            [750,200],  //play
+            [1050,200], //close
+            [750,300],  //next medium
+            [1050,300], //back medium
+            [750,400],  //help medium
+            [1050,400], //repo
+            [1050,500], //next small
+            [1200,500], //back small
+            [1200,600], //help small
+        ]
     ];
     //size types of on-source splices
     //  [image_index][splice sheet index, size type(0=title, 1=long, 2=medium, 3=short)]
     static sourceTypes:number[][] = 
     [
+        //menu backplate
+        [
+            0,
+        ],
         //menu sheet
-        //  empty
-        [0,1],  //title
-        [0,2],  //header
-        [0,3],  //medium
-        [0,4],  //small
-        [0,5],  //square(ish)
-        //  text
-        [0,0],  //title
-        [0,2],  //header wave
-        [0,2],  //header enemies
-        [0,2],  //header money
-        [0,3],  //play
-        [0,3],  //close
-        [0,3],  //next medium
-        [0,3],  //back medium
-        [0,3],  //help medium
-        [0,3],  //repo
-        [0,4],  //next small
-        [0,4],  //back small
-        [0,4],  //help small
+        [
+            //  empty
+            1,  //title
+            2,  //header
+            3,  //medium
+            4,  //small
+            5,  //square(ish)
+            //  text
+            0,  //title
+            2,  //header wave
+            2,  //header enemies
+            2,  //header money
+            3,  //play
+            3,  //close
+            3,  //next medium
+            3,  //back medium
+            3,  //help medium
+            3,  //repo
+            4,  //next small
+            4,  //back small
+            4,  //help small
+        ]
     ];
     //size definitions
-    static sourceSizes:number[][] = 
+    static sourceSizes:number[][][] = 
     [
+        //menu backplate
+        [
+            [680, 480]
+        ],
         //menu sheet
-        [1050,200], //title tall
-        [1050,100], //title 
-        [750,100],  //header
-        [300,100],  //medium
-        [150,100],  //short
-        [300,200],  //square(ish)
+        [
+            [1050,200], //title tall
+            [1050,100], //title 
+            [750,100],  //header
+            [300,100],  //medium
+            [150,100],  //short
+            [300,200],  //square(ish)
+        ]
     ];
 }
 //contains text for the tutorial menu

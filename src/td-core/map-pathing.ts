@@ -6,21 +6,66 @@
 */
 import { List, Dictionary } from "src/utilities/collections";
 import { configPathing } from "./config/pathing-config";
+import { GameState } from "./game-states";
 export class WaypointManager extends Entity 
 {
-    private isDebugging = false;
-    public static INSTANCE:WaypointManager; 
+    //access pocketing
+    private static instance:undefined|WaypointManager;
+    public static get Instance():WaypointManager
+    {
+        //ensure instance is set
+        if(WaypointManager.instance === undefined)
+        {
+            WaypointManager.instance = new WaypointManager();
+        }
+
+        return WaypointManager.instance;
+    }
 
     //collections
     //  waypoints
-    WaypointList:List<Waypoint>;
-    WaypointDict:Dictionary<Waypoint>;
+    WaypointList:List<Waypoint> = new List<Waypoint>();
+    WaypointDict:Dictionary<Waypoint> = new Dictionary<Waypoint>();
     //  spawnpoints
-    SpawnPoints:List<Waypoint>; 
+    SpawnPoints:List<Waypoint> = new List<Waypoint>();
+
+    //constructor
+    private constructor()
+    {
+        super();
+
+        //object
+        this.addComponent(new Transform
+        ({
+            position: new Vector3(0,0,0),
+            scale: new Vector3(1,1,1),
+            rotation: new Quaternion().setEuler(0,0,0)
+        }));
+    }
+
+    //generates waypoints, loading from defs stored in pathing-config
+    public GenerateWaypoints()
+    {
+        //create all waypoint objects
+        if(GameState.debuggingPath) log("generating waypoint objects...");
+        for(var i:number = 0; i<configPathing.length; i++)
+        {
+            //object
+            const waypoint:Waypoint = new Waypoint(configPathing[i].Index);
+            waypoint.setParent(this);
+
+            //add to collections
+            this.WaypointList.addItem(waypoint);
+            this.WaypointDict.addItem(waypoint.Index.toString(), waypoint);
+
+            if(configPathing[i].Type == 1) { this.SpawnPoints.addItem(waypoint); }
+        }
+        if(GameState.debuggingPath) log("generated waypoint objects, count: "+this.WaypointList.size());
+    }
     
-    //iterates through spawn points
-    spawnPointIndex:number = 0;
-    GetSpawnPoint()
+    //returns the a spawn point, pointer is persistent and iterates through all spawn points  
+    private spawnPointIndex:number = 0;
+    public GetSpawnPoint()
     {
         this.spawnPointIndex++;
         if(this.spawnPointIndex >= this.SpawnPoints.size()) { this.spawnPointIndex = 0; }
@@ -29,7 +74,7 @@ export class WaypointManager extends Entity
     }
 
     //returns the next waypoint in the chain based on the given index and seed
-    GetNextWaypoint(index:number, seed:number):undefined|Waypoint
+    public GetNextWaypoint(index:number, seed:number):undefined|Waypoint
     {
         //if target length is zero, waypoint is end of path
         if(this.WaypointDict.getItem(index.toString()).Target.length == 0)
@@ -43,98 +88,32 @@ export class WaypointManager extends Entity
     }
 
     //returns the total distance of the waypoint path that will be travelled by a unit based on the given spawn and seed
-    GetRouteDistance(spawn:number, seed:number):number
+    private distance:number = 0;
+    private waypointPrev:undefined|Waypoint;
+    private waypointCur:undefined|Waypoint;
+    public GetRouteDistance(spawn:number, seed:number):number
     {
-        var distance:number = 0;
-        var waypointPrev:Waypoint;
-        var waypointCur:undefined|Waypoint = this.WaypointDict.getItem(spawn.toString());
+        this.distance = 0;
+        this.waypointPrev = undefined;
+        this.waypointCur = this.WaypointDict.getItem(spawn.toString());
 
         //process path
         while(true)
         {
             //ensure entry waypoint is value
-            if(waypointCur == undefined) { return -1; }
+            if(this.waypointCur == undefined) { return -1; }
 
             //get next waypoint pair
-            waypointPrev = waypointCur;
-            waypointCur = this.GetNextWaypoint(waypointPrev.Index, seed);
+            this.waypointPrev = this.waypointCur;
+            this.waypointCur = this.GetNextWaypoint(this.waypointPrev.Index, seed);
 
             //reached end of path
-            if(waypointCur == undefined) { return distance; }
+            if(this.waypointCur == undefined) { return this.distance; }
 
             //add path distance
-            distance += Math.abs(Vector3.Distance(waypointPrev.getComponent(Transform).position, waypointCur.getComponent(Transform).position));
+            this.distance += Math.abs(Vector3.Distance(this.waypointPrev.getComponent(Transform).position, this.waypointCur.getComponent(Transform).position));
             //log("calc: "+distance.toString())
         }
-    }
-
-    //constructor
-    constructor()
-    {
-        super();
-        WaypointManager.INSTANCE = this;
-        this.addComponent(new Transform
-        ({
-            position: new Vector3(0,0,0),
-            scale: new Vector3(1,1,1),
-            rotation: new Quaternion().setEuler(0,0,0)
-        }));
-
-        //waypoints
-        this.WaypointList = new List<Waypoint>();
-        this.WaypointDict = new Dictionary<Waypoint>();
-        //spawnpoints
-        this.SpawnPoints = new List<Waypoint>();
-    }
-
-    //generates waypoints, loading from defs stored in pathing-config
-    GenerateWaypoints()
-    {
-        //create all waypoint objects
-        if(this.isDebugging) log("generating waypoint objects...");
-        for(var i:number = 0; i<configPathing.length; i++)
-        {
-            //object
-            const waypoint:Waypoint = new Waypoint(configPathing[i].Index);
-            waypoint.setParent(this);
-
-            //add to collections
-            this.WaypointList.addItem(waypoint);
-            this.WaypointDict.addItem(waypoint.Index.toString(), waypoint);
-
-            if(configPathing[i].Type == 1) { this.SpawnPoints.addItem(waypoint); }
-        }
-        if(this.isDebugging) log("generated waypoint objects, count: "+this.WaypointList.size());
-/*
-        //attach all waypoint targets
-        if(this.isDebugging) log("linking waypoint targets...");
-        for(var i:number = 0; i<this.WaypointList.size(); i++)
-        {
-            //check if target is same object (end of pathway)
-            if(this.WaypointList.getItem(i).NextWaypoint === this.WaypointList.getItem(i).Index.toString())
-            {
-                if(this.isDebugging) log("waypoint id:"+this.WaypointList.getItem(i).Index.toString()+" is end of pathway");
-                continue;
-            }
-            //process each target
-            for(var j:number=0; j<configPathing[i].Target.length; j++)
-            {}
-
-            //check if target exists
-            if(!this.WaypointDict.containsKey(this.WaypointList.getItem(i).Target))
-            {
-                if(this.isDebugging) log("waypoint id:"+this.WaypointList.getItem(i).Index.toString()+" target does not exist");
-                continue;
-            }
-
-            //assign target to waypoint
-            this.WaypointList.getItem(i).NextWaypoint = this.WaypointDict.getItem(this.WaypointList.getItem(i).Target.toString());
-            if(this.isDebugging)
-            {
-                log("linked waypoint="+this.WaypointList.getItem(i).Index+"to target="+this.WaypointList.getItem(i).NextWaypoint?.Index);
-            } 
-        }
-        if(this.isDebugging) log("linked waypoint targets!");*/
     }
 }
 
@@ -145,7 +124,7 @@ export class Waypoint extends Entity
     Target:string[];
 
     //constructor
-    constructor(ind:number)
+    public constructor(ind:number)
     {
         super();
 

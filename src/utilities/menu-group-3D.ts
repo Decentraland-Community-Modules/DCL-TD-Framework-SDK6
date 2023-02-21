@@ -8,32 +8,34 @@
 */
 import { List, Dictionary } from "collections";
 @Component("MenuGroup3D")
-export class MenuGroup3D extends Entity 
+export class MenuGroup3D
 {
     //address to target models
     //  NOTE: this should be static, but static defs seem to break in the SDK deployment
     private object_locations:string[] = 
     [
-        "models/utilities/menuObjSquare.glb",
-        "models/utilities/menuObjShort.glb",
-        "models/utilities/menuObjLong.glb"
+        "",
+        "models/utilities/MenuButtonSquare.glb",
+        "models/utilities/MenuButtonSquare.glb",
+        "models/utilities/MenuButtonSquare.glb",
+        "models/utilities/MenuPanel3D.glb",
     ];
 
+    //parental object for menu group, holds all associated objects (menu, toggle, etc)
+    public groupParent:Entity;
     //action object used to toggle main menu object
-    private menuToggleState:number = 0;
-    private menuToggle:Entity = new Entity();
+    //private menuToggleState:boolean = false;
+    //private menuToggle:Entity = new Entity();
     //collections for entity access
     private menuList:List<MenuObject3D>;
     private menuDict:Dictionary<MenuObject3D>;
 
     //constructor, takes in an entity that will be used when parenting
-    constructor(parent:Entity)
+    constructor()
     {
-        super();
-
-        //add transform
-        this.setParent(parent);
-        this.addComponent(new Transform
+        //create group parent
+        this.groupParent = new Entity();
+        this.groupParent.addComponent(new Transform
         ({
             position: new Vector3(0,0,0),
             scale: new Vector3(1,1,1),
@@ -41,7 +43,7 @@ export class MenuGroup3D extends Entity
         }));
 
         //set up menu toggle
-        this.menuToggle.setParent(parent);
+        /*this.menuToggle.setParent(this.groupParent);
         this.menuToggle.addComponent(new GLTFShape("models/utilities/menuObjSettingsGearBox.glb"));
         this.menuToggle.addComponent(new Transform
         ({
@@ -66,34 +68,18 @@ export class MenuGroup3D extends Entity
                     distance: 8
                 }
             )
-        );
+        );*/
 
         //initialize collections
         this.menuList = new List<MenuObject3D>();
         this.menuDict = new Dictionary<MenuObject3D>();
     }
-
+/*
     //toggles the current menu state
     public ToggleMenuState()
     {
-        if(this.menuToggleState == 0) this.SetMenuState(1);
-        else this.SetMenuState(0);
-    }
-
-    //sets the state of the primary menu tree
-    public SetMenuState(state:number)
-    {
-        //enable menu
-        if(state == 0)
-        {
-            engine.addEntity(this);
-        }
-        //disable menu
-        else
-        {
-            engine.removeEntity(this);
-        }
-        this.menuToggleState = state;
+        this.menuToggleState = !this.menuToggleState;
+        this.SetMenuState(this.menuToggleState);
     }
 
     //menu toggle object
@@ -113,14 +99,49 @@ export class MenuGroup3D extends Entity
             break;
         }
     }
+*/
+    //sets the state of the primary menu tree
+    public SetMenuState(state:boolean)
+    {
+        //enable menu
+        if(state)
+        {
+            engine.addEntity(this.groupParent);
+        }
+        //disable menu
+        else
+        {
+            engine.removeEntity(this.groupParent);
+        }
+        //this.menuToggleState = state;
+    }
+
+    //modifies the transform details of the menu group parent object
+    //  type: 0->position, 1->scale, 2->rotation
+    public AdjustMenuParent(type:number, vect:Vector3)
+    {
+        switch(type)
+        {
+            case 0:
+                this.groupParent.getComponent(Transform).position = vect;
+            break;
+            case 1:
+                this.groupParent.getComponent(Transform).scale = vect;
+            break;
+            case 2:
+                this.groupParent.getComponent(Transform).rotation = new Quaternion().setEuler(vect.x, vect.y, vect.z);
+            break;
+        }
+    }
 
     //prepares a menu object of the given size/shape, with the given text, 
     //  registered under the given name
-    public AddMenuObject(name:string, type:number)
+    public AddMenuObject(name:string, type:number, par:string='')
     {
         //create and prepare entities
         var tmp:MenuObject3D = new MenuObject3D(this.object_locations[type], name);
-        tmp.setParent(this);
+        if(par != '') tmp.setParent(this.GetMenuObject(par));
+        else tmp.setParent(this.groupParent);
 
         //register object to collections
         this.menuList.addItem(tmp);
@@ -152,7 +173,7 @@ export class MenuGroup3D extends Entity
                 this.menuDict.getItem(name).getComponent(Transform).scale = vect;
             break;
             case 2:
-                this.menuDict.getItem(name).getComponent(Transform).rotation = new Quaternion(vect.x, vect.y, vect.z);
+                this.menuDict.getItem(name).getComponent(Transform).rotation =  new Quaternion().setEuler(vect.x, vect.y, vect.z);
             break;
         }
     }
@@ -162,6 +183,10 @@ export class MenuGroup3D extends Entity
     public AddMenuText(nameObj:string, nameTxt:string, text:string)
     {
         this.menuDict.getItem(nameObj).AddTextObject(nameTxt, text);
+        this.menuDict.getItem(nameObj).GetTextObject(nameTxt).getComponent(TextShape).width = 0;
+        this.menuDict.getItem(nameObj).GetTextObject(nameTxt).getComponent(TextShape).height = 0;
+        this.menuDict.getItem(nameObj).GetTextObject(nameTxt).getComponent(TextShape).textWrapping = false;
+        this.menuDict.getItem(nameObj).GetTextObject(nameTxt).getComponent(TextShape).color = this.textColour;
     }
 
     //sets a text object's display text
@@ -180,6 +205,22 @@ export class MenuGroup3D extends Entity
     public AdjustTextDisplay(nameObj:string, nameTxt:string, type:number, value:number)
     {
         this.menuDict.getItem(nameObj).AdjustTextDisplay(nameTxt, type, value);
+    }
+
+    private textColour:Color3 = Color3.Black();
+    public SetColour(colour:Color3)
+    {
+        //change default colour
+        this.textColour = colour;
+
+        //apply change to all menu text objects
+        for(var i:number = 0; i<this.menuList.size(); i++)
+        {    
+            for(var j:number = 0; j<this.menuList.getItem(i).textList.size(); j++)
+            {
+                this.menuList.getItem(i).textList.getItem(j).getComponent(TextShape).color = this.textColour;
+            }
+        }
     }
 }
 
@@ -205,7 +246,8 @@ export class MenuObject3D extends Entity
             scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
-        this.addComponent(new GLTFShape(model));
+        
+        if(model != '') this.addComponent(new GLTFShape(model));
 
         //set access name
         this.Name = nam;
@@ -213,6 +255,18 @@ export class MenuObject3D extends Entity
         //collections
         this.textList = new List<Entity>();
         this.textDict = new Dictionary<Entity>();
+    }
+
+    public SetObjectState(state:boolean)
+    {
+        if(state)
+        {
+            if(!this.isAddedToEngine()) engine.addEntity(this);
+        }
+        else
+        {
+            if(this.isAddedToEngine()) engine.removeEntity(this);
+        }
     }
 
     public GetTextObject(name:string):Entity
@@ -259,19 +313,38 @@ export class MenuObject3D extends Entity
                 this.textDict.getItem(name).getComponent(Transform).scale = vect;
             break;
             case 2:
-                this.textDict.getItem(name).getComponent(Transform).rotation = new Quaternion(vect.x, vect.y, vect.z);
+                this.textDict.getItem(name).getComponent(Transform).rotation = new Quaternion().setEuler(vect.x, vect.y, vect.z);
             break;
         }
     }
 
     //changes a targeted menu object entity
-    //  type: 0->font size
+    //  type: 0->font size, h align, v align
     public AdjustTextDisplay(name:string, type:number, value:number)
     {
         switch(type)
         {
             case 0:
                 this.textDict.getItem(name).getComponent(TextShape).fontSize = value;
+            break;
+            case 1:
+                switch(value)
+                {
+                    case 0: this.textDict.getItem(name).getComponent(TextShape).hTextAlign = "left"; break;
+                    case 1: this.textDict.getItem(name).getComponent(TextShape).hTextAlign = "center"; break;
+                    case 2: this.textDict.getItem(name).getComponent(TextShape).hTextAlign = "right"; break;
+                }
+            break;
+            case 2:
+                switch(value)
+                {
+                    case 0: this.textDict.getItem(name).getComponent(TextShape).vTextAlign = "top"; break;
+                    case 1: this.textDict.getItem(name).getComponent(TextShape).vTextAlign = "center"; break;
+                    case 2: this.textDict.getItem(name).getComponent(TextShape).vTextAlign = "bottom"; break;
+                }
+            break;
+            case 3:
+                this.textDict.getItem(name).getComponent(TextShape).lineSpacing = value.toString(); 
             break;
         }
     }

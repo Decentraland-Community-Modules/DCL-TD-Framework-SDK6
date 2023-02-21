@@ -16,7 +16,7 @@ import { configTower } from "./config/tower-config";
 import { dataTowers } from "./data/tower-data";
 import { EnemyUnitObject } from "./enemy-entity";
 import { TriggerComponent, TriggerSphereShape } from "@dcl/ecs-scene-utils";
-import { EnemyManager } from "./enemy-manager";
+import { EnemyUnitManager } from "./enemy-manager";
 import { GameState } from "./game-states";
 
 //provides the player with an interactable object used to build,
@@ -24,10 +24,9 @@ import { GameState } from "./game-states";
 //and cleared at the start of each game 
 export class TowerFoundation extends Entity
 {
-    //access
-    Index:number;
-    //whether active or not
-    IsActive:boolean;
+    //access index
+    private index:number;
+    get Index():number { return this.index; };
 
     //build info
     private towerObjGimbal:Entity;
@@ -35,7 +34,7 @@ export class TowerFoundation extends Entity
     //  current tower def
     TowerDef:number = -1;
     //  current upgrades
-    TowerUpgrades:number[] = [0,0,0];
+    TowerUpgrades:number[] = [];
 
     //targeting
     //  collider (this could be optimized by denoting a single trigger for each tower def)
@@ -45,7 +44,9 @@ export class TowerFoundation extends Entity
 
     //range indicator
     TowerRangeIndicator:Entity;
-    //  toggles range indicator visibility
+    /**
+     * toggles range indicator visibility
+     */
     public ToggleRangeIndicator()
     {
         if(this.TowerRangeIndicator.isAddedToEngine())
@@ -57,7 +58,10 @@ export class TowerFoundation extends Entity
             this.SetRangeIndicator(true);
         }
     }
-    //  sets range indicator visibility
+    /**
+     * sets range indicator visibility to provided state
+     * @param state target state of range indicator 
+     */
     public SetRangeIndicator(state:boolean)
     {
         if(state) { if(!this.TowerRangeIndicator.isAddedToEngine()) engine.addEntity(this.TowerRangeIndicator); }
@@ -67,14 +71,21 @@ export class TowerFoundation extends Entity
     //real-time system
     TowerSystem:TowerFoundationSystem;
 
-    //constructor
+    /**
+     * constructor
+     * @param ind unique index of this tower foundation
+     * @param shapeFoundation object shape used to display foundation base
+     * @param shapeGimbal object shape used to display foundation gimbal/rotational point for tower
+     * @param shapeRange object shape used to display tower's range (should be transparent)
+     * @param enemyEnter callback function called when an enemy unit enters the tower's radius
+     * @param enemyExit callback function called when an enemy unit exits the tower's radius
+     */
     constructor(ind:number, shapeFoundation:GLTFShape, shapeGimbal:GLTFShape, shapeRange:GLTFShape, enemyEnter:(towerIndex:number, enemyIndex:number)=>void, enemyExit:(towerIndex:number, enemyIndex:number)=>void)
     {
         super();
 
         //data
-        this.Index = ind;
-        this.IsActive = false;
+        this.index = ind;
 
         //object
         this.addComponent(shapeFoundation);
@@ -98,14 +109,14 @@ export class TowerFoundation extends Entity
                     //calls
                     onTriggerEnter(entity) 
                     {
-                        if(GameState.TowerDebugging) log("enemy entity:"+(entity as EnemyUnitObject).index+" entered foundation trigger, ID:"+index.toString());
-                        enemyEnter(index, (entity as EnemyUnitObject).index);
+                        if(GameState.debuggingTower) log("Tower Foundation: enemy entity:"+(entity as EnemyUnitObject).Index+" entered foundation trigger, ID:"+index.toString());
+                        enemyEnter(index, (entity as EnemyUnitObject).Index);
                         //TowerManager.INSTANCE.TowerRangeEnemyEnter((entity as EnemyUnitObject).index, index);
                     },
                     onTriggerExit(entity) 
                     {
-                        if(GameState.TowerDebugging) log("enemy entity:"+(entity as EnemyUnitObject).index+" exited foundation trigger, ID:"+index.toString());
-                        enemyExit(index, (entity as EnemyUnitObject).index);
+                        if(GameState.debuggingTower) log("Tower Foundation: enemy entity:"+(entity as EnemyUnitObject).Index+" exited foundation trigger, ID:"+index.toString());
+                        enemyExit(index, (entity as EnemyUnitObject).Index);
                         //TowerManager.INSTANCE.TowerRangeEnemyExit((entity as EnemyUnitObject).index, index);
                     },
                 }
@@ -118,7 +129,7 @@ export class TowerFoundation extends Entity
         this.towerObjGimbal.addComponent(shapeGimbal);
         this.towerObjGimbal.addComponent(new Transform
         ({
-            position: new Vector3(0,0,0),
+            position: new Vector3(0,0.4,0),
             scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
@@ -127,7 +138,7 @@ export class TowerFoundation extends Entity
         this.towerObjFrame = new Entity();
         this.towerObjFrame.addComponent(new Transform
         ({
-            position: new Vector3(0,0.5,0),
+            position: new Vector3(0,0,0),
             scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
@@ -147,7 +158,9 @@ export class TowerFoundation extends Entity
         this.TowerSystem = new TowerFoundationSystem(this.getComponent(Transform), this.towerObjGimbal, this.towerObjFrame);
     }
 
-    //used to set default/entry state
+    /**
+     * used to set default/entry state
+     */
     public Initialize()
     {
         //hide tower objects (if any)
@@ -159,10 +172,6 @@ export class TowerFoundation extends Entity
 
         //reset type
         this.TowerDef = -1;
-        this.IsActive = false;
-
-        //reset upgrades
-        this.TowerUpgrades = [0,0,0];
 
         //ensure system is off
         engine.removeSystem(this.TowerSystem);
@@ -179,15 +188,27 @@ export class TowerFoundation extends Entity
         }
     }
 
-    //sets the foundation's current tower
+    /**
+     * sets the foundation's current tower 
+     * @param index targeted definition index
+     * @param shape shape object used to display the tower's current type
+     */
     public SetTower(index:number, shape:GLTFShape)
     {
         //set index
         this.TowerDef = index;
 
+        //reset upgrades
+        this.TowerUpgrades = [];
+        while(this.TowerUpgrades.length < dataTowers[this.TowerDef].Upgrades.length)
+        {
+            this.TowerUpgrades.push(0);
+        }
+
         //set frame
         //  shape
         this.towerObjFrame.addComponent(shape);
+        this.towerObjFrame.getComponent(Transform).scale = new Vector3(dataTowers[this.TowerDef].Scale[0],dataTowers[this.TowerDef].Scale[1],dataTowers[this.TowerDef].Scale[2]);
         
         //update trigger radius
         this.TriggerShape.radius = dataTowers[this.TowerDef].ValueAttackRange;
@@ -196,50 +217,81 @@ export class TowerFoundation extends Entity
         this.SetRangeIndicator(false);
 
         //pull in functional details
+        //  attack animator raw details
+        this.TowerSystem.attackDamagePeriod = dataTowers[this.TowerDef].ValueAttackIntervalDamage;
+        this.TowerSystem.attackLength = dataTowers[this.TowerDef].ValueAttackIntervalFull;
+        //  attack details
         this.TowerSystem.attackDamage = dataTowers[this.TowerDef].ValueAttackDamage;
         this.TowerSystem.attackRend = dataTowers[this.TowerDef].ValueAttackRend;
         this.TowerSystem.attackPen = dataTowers[this.TowerDef].ValueAttackPenetration;
         this.TowerSystem.attackRange = dataTowers[this.TowerDef].ValueAttackRange;
-        this.TowerSystem.attackLength = dataTowers[this.TowerDef].ValueAttackIntervalFull;
-        this.TowerSystem.attackDamagePeriod = dataTowers[this.TowerDef].ValueAttackIntervalDamage;
+        this.TowerSystem.attackSpeed = dataTowers[this.TowerDef].ValueAttackSpeed;
 
         //reset system
         this.TowerSystem.Reset();
     }   
     
-    //increases the level of the targeted upgrade and applies its effects
+    /**
+     * increases the level of the targeted upgrade and applies its effects
+     * @param index index of targeted upgrade that will be increased
+     */
     public ApplyUpgrade(index:number)
     {
         //increase count
         this.TowerUpgrades[index]++;
 
-        //recalculate tower's data
-        for(var i:number=0; i<this.TowerUpgrades.length; i++)
+        //recalculate tower's data based on upgrade type
+        switch(dataTowers[this.TowerDef].Upgrades[index][0])
         {
-            //if upgrade is active
-            if(this.TowerUpgrades[i] > 0)
-            {
-                //calculate new value
-
-            }
+            case "ValueAttackDamage":
+                this.TowerSystem.attackDamage = dataTowers[this.TowerDef].ValueAttackDamage 
+                    + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+            break;
+            case "ValueAttackPenetration":
+                this.TowerSystem.attackPen = dataTowers[this.TowerDef].ValueAttackPenetration 
+                    + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+            break;
+            case "ValueAttackRend":
+                this.TowerSystem.attackRend = dataTowers[this.TowerDef].ValueAttackRend 
+                    + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+            break;
+            case "ValueAttackRange":
+                this.TowerSystem.attackRange = dataTowers[this.TowerDef].ValueAttackRange 
+                    + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+            break;
+            case "ValueAttackSpeed":
+                this.TowerSystem.attackSpeed = dataTowers[this.TowerDef].ValueAttackSpeed 
+                    + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+                //scale animation
+                this.TowerSystem.animations[1].speed = this.TowerSystem.attackLength / this.TowerSystem.attackSpeed;
+            break;
         }
     }
 
-    //called when an enemy enters the tower's trigger field
+    /**
+     * called when an enemy enters the tower's trigger field
+     * @param enemy index of enemy unit that has entered targeting
+     */
     public EnemyEnter(enemy:number)
     {
         this.TowerSystem.AddTarget(enemy);
     }
-
-    //called when an enemy exits the tower's trigger field
-    //  does not interrupt an on-going attack on target if unit passes out of range during attack
+ 
+    /**
+     * called when an enemy exits the tower's trigger field,
+     *  does not interrupt an on-going attack on target if unit passes out of range during attack
+     * @param enemy index of enemy unit that has exited targeting
+     */
     public EnemyExit(enemy:number)
     {
         this.TowerSystem.RemoveTarget(enemy);
     }
 }
-//handles all real-time processing for the tower, including looking at and damaging enemies
-//  TODO: create callback from enemy to tower system upon death to remove target and reset attack if enemy was target
+
+/**
+ * handles all real-time processing for the tower, including looking at and damaging enemies
+ * TODO: create callback from enemy to tower system upon death to remove target and reset attack if enemy was target
+ */
 export class TowerFoundationSystem implements ISystem
 {
     //active data, derived from def and upgrade levels
@@ -250,8 +302,11 @@ export class TowerFoundationSystem implements ISystem
     //  attack range
     attackRange:number = 0;
     //  attack speed
-    attackLength:number = 2;
-    attackDamagePeriod:number = 1;
+    //      animation raw lengths
+    attackLength:number = 2;    //full length of animation
+    attackDamagePeriod:number = 1;  //point in animation when damage is dealt
+    //      actual length of attacks
+    attackSpeed:number = 0;
     //  special modifiers (WIP)
     //attackModifiers:number[][];
 
@@ -272,53 +327,70 @@ export class TowerFoundationSystem implements ISystem
     animator:Animator;
     animations:AnimationState[];
 
+    public SetAnimationState(state:number)
+    {
+        //disable all other animations
+        this.animations[0].stop();
+        this.animations[1].stop();
+
+        //activate targeted animation
+        this.animations[state].play();
+    }
+
     //  current target
     TowerTarget:undefined|EnemyUnitObject;
     //  possible targets
     TowerTargets:List<EnemyUnitObject>;
 
-    //add target
+    /**
+     * adds an enemy unit to the list of possible targets
+     * @param enemy index of enemy to be added
+     */
     public AddTarget(enemy:number)
     {
-        if(GameState.TowerDebugging) log("adding target ID:"+enemy.toString());
+        if(GameState.debuggingTower) log("Tower System: adding target ID:"+enemy.toString());
 
         //add enemy index to listing on tower
-        this.TowerTargets.addItem(EnemyManager.INSTANCE.enemyDict.getItem(enemy.toString()));
+        this.TowerTargets.addItem(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()));
 
         //if there were no other targets, re-enable system
         if(this.TowerTargets.size() == 1)
         {
-            if(GameState.TowerDebugging) log("no previous targets existed, reactivating system");
+            if(GameState.debuggingTower) log("Tower System: no previous targets existed, reactivating system...");
             this.Reset();
             engine.addSystem(this);
         }
-        if(GameState.TowerDebugging) log("new size: "+this.TowerTargets.size());
+        if(GameState.debuggingTower) log("Tower System: new targeting list size = "+this.TowerTargets.size());
     }
-    //remove target
-    //  sometimes the enemy clean up phase happens before this state and this can removal can be thrown twice
-    //      once during death check and second when object leaves collider, only process this call if the enemy is alive
+      
+    /**
+     * removes an enemy unit from the list of possible targets
+     * sometimes the enemy clean up phase happens before this state and this can removal can be thrown twice
+     * once during death check and second when object leaves collider, only process this call if the enemy is alive
+     * @param enemy index of enemy to be removed
+     */
     public RemoveTarget(enemy:number)
     {
-        if(EnemyManager.INSTANCE.enemyDict.getItem(enemy.toString()).isAlive)
+        if(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()).IsAlive)
         {
-            if(GameState.TowerDebugging) log("removing target ID:"+enemy.toString());
+            if(GameState.debuggingTower) log("Tower System: removing target ID:"+enemy.toString());
 
             //remove enemy index from listing on tower
-            this.TowerTargets.removeItem(EnemyManager.INSTANCE.enemyDict.getItem(enemy.toString()));
+            this.TowerTargets.removeItem(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()));
 
             //if enemy is the current target
-            if(this.TowerTarget === EnemyManager.INSTANCE.enemyDict.getItem(enemy.toString()))
+            if(this.TowerTarget === EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()))
             {
                 //halt any on-going attack
                 this.Reset();
             }
-            if(GameState.TowerDebugging) log("new size: "+this.TowerTargets.size());
+            if(GameState.debuggingTower) log("Tower System: new targeting list size = "+this.TowerTargets.size());
         }
     }
 
     //callbacks
-    DamageEnemy:(index:number, amount:number) => void;
-    private damageEnemy(index:number, amount:number) { log("tower callback not set - damage enemy:"+index.toString()); }
+    DamageEnemy:(index:number, dam:number, pen:number, rend:number) => void;
+    private damageEnemy(index:number, dam:number, pen:number, rend:number) { log("Tower System: tower callback not set - damage enemy:"+index.toString()); }
 
     //initializes unit upon object creation
     //  takes in index for this unit and starting waypoint
@@ -338,12 +410,13 @@ export class TowerFoundationSystem implements ISystem
         this.animator = this.TowerFrame.addComponent(new Animator());
         //  states
         this.animations = [];
-        this.animations.push(new AnimationState('anim_idle', { looping: true, speed: 1 }));
+        this.animations.push(new AnimationState('anim_idle', { looping: true, speed: 0.2 }));
         this.animations.push(new AnimationState('anim_attack', { looping: true, speed: 1 }));
+        //  clips
         this.animator.addClip(this.animations[0]);
         this.animator.addClip(this.animations[1]);
-        this.animations[0].stop();
-        this.animations[1].stop();
+        //  halt clips by default
+        this.SetAnimationState(0);
 
         //link event
         this.DamageEnemy = this.damageEnemy;
@@ -368,18 +441,15 @@ export class TowerFoundationSystem implements ISystem
             //ensure target has been found
             if(this.TowerTarget != undefined) 
             {
-                if(GameState.TowerDebugging) log("attack beginning on target");
-                //animation
-                this.animations[0].stop();
-                //some animations are off by a couple frames or can be accelerated incorrectly,
-                //  so we hard reset at start instead of relying on loop
-                this.animations[1].stop();
-                this.animations[1].play();
+                if(GameState.debuggingTower) log("Tower System: attack beginning on target");
+                //attack animation
+                this.SetAnimationState(1);
                 //timing
                 this.isAttacking = true;
                 this.hasDamaged = false;
-                this.attackTimer[0] = this.attackDamagePeriod;
-                this.attackTimer[1] = this.attackLength-this.attackDamagePeriod;
+                //  scale based on attack speed
+                this.attackTimer[0] = this.attackSpeed/100 * (this.attackLength - this.attackDamagePeriod);
+                this.attackTimer[1] = this.attackSpeed/100 * this.attackDamagePeriod;///this.attackLength);
             }
         }
         //if attacking, reduce cooldown
@@ -394,10 +464,17 @@ export class TowerFoundationSystem implements ISystem
                 //check if damage should be dealt
                 if(this.attackTimer[0] <= 0)
                 {
-                    if(GameState.TowerDebugging) log("attack damage dealt to target");
                     //deal damage
                     this.hasDamaged = true;
-                    if(this.TowerTarget != undefined) this.DamageEnemy(this.TowerTarget.index, this.attackDamage);
+                    if(this.TowerTarget != undefined)
+                    {
+                        if(GameState.debuggingTower) log("Tower System: attack completed, attack damage "+this.attackDamage.toString()+" dealt to target "+this.TowerTarget.Index.toString());
+                        this.DamageEnemy(this.TowerTarget.Index, this.attackDamage, this.attackPen, this.attackRend);
+                    }
+                    else
+                    {
+                        if(GameState.debuggingTower) log("Tower System: attack completed, no target exists");
+                    }
                 }
             }  
             else
@@ -418,7 +495,7 @@ export class TowerFoundationSystem implements ISystem
     //resets the tower's state to pre-attack defaults
     public Reset()
     {
-        if(GameState.TowerDebugging) log("tower reset");
+        if(GameState.debuggingTower) log("Tower System: tower system has been reset");
         this.TowerTarget = undefined;
 
         this.isAttacking = false;
@@ -427,8 +504,8 @@ export class TowerFoundationSystem implements ISystem
         this.attackTimer[0] = 1;
         this.attackTimer[1] = 0;
         
-        this.animations[0].play();
-        this.animations[1].stop();
+        this.animations[1].speed = 1;
+        this.SetAnimationState(0);
     }
 
     //conducts a target check on the given enemy, called when an enemy is killed
@@ -437,25 +514,28 @@ export class TowerFoundationSystem implements ISystem
     TargetDeathCheck(index:number)
     {
         //if enemy is tower's target
-        if(this.TowerTarget?.index == index)
+        if(this.TowerTarget?.Index == index)
         {
-            if(GameState.TowerDebugging) log("current target killed ID:"+index.toString());
+            if(GameState.debuggingTower) log("Tower System: currently targeted enemy="+index.toString()+" has been killed, reassigning target");
 
             //remove target from list
             this.TowerTargets.removeItem(this.TowerTarget);
 
-            //if tower has not fired yet, reset
+            //if tower has not fired yet, reset tower to find new target
             if(!this.hasDamaged)
             {
                 this.Reset();
             }
+            //else, wait out existing cooldown
         }
     }
+
+    //TODO: push additional targeting types back into the main fork after optimizations are completed
 
     //attempts to find target
     public FindTarget()
     {
-        if(GameState.TowerDebugging) log("attempting to find valid target, size:"+this.TowerTargets.size().toString());
+        if(GameState.debuggingTower) log("Tower System: attempting to find valid target from targeting list, size = "+this.TowerTargets.size().toString());
         //purge list of dead enemies
         var i:number = 0;
         var target:EnemyUnitObject;
@@ -463,7 +543,7 @@ export class TowerFoundationSystem implements ISystem
         {
             //if enemy is dead, remove unit
             target = this.TowerTargets.getItem(i);
-            if(!target.isAlive)
+            if(!target.IsAlive)
             {
                 this.TowerTargets.removeItem(target);
             }
@@ -477,7 +557,7 @@ export class TowerFoundationSystem implements ISystem
         //if there are no targets, begin idle
         if(this.TowerTargets.size() <= 0)
         {
-            if(GameState.TowerDebugging) log("no valid target found, removing system from engine");
+            if(GameState.debuggingTower) log("Tower System: no valid enemy target found, removing system from engine");
 
             //reset tower
             this.Reset();
@@ -490,7 +570,7 @@ export class TowerFoundationSystem implements ISystem
         //apply sorting technique
         this.GetTargetDistance();
 
-        if(GameState.TowerDebugging) log("target found: "+this.TowerTarget?.index.toString()+", travelled: "+this.TowerTarget?.unitSystem.distanceTotal.toString());
+        if(GameState.debuggingTower) log("Tower System: found valid enemy target = "+this.TowerTarget?.Index.toString()+", unit has travelled = "+this.TowerTarget?.unitSystem.distanceTotal.toString());
     }
 
     //finds the enemy who has travelled the furthest distance

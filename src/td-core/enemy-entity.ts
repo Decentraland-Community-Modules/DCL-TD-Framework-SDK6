@@ -6,55 +6,65 @@
     up a single attack, deals damage to the player's health
 
     this is split into 2 classes:
-      unit system: move object around on map, animations, 
+      unit system: comprised of 2 entities: invisible moving/trigger and visible shape (parented under movement obj)
       unit object: in-game object visible to the player and acts as a target for towers
 */
-import { TriggerBoxShape, TriggerComponent } from "@dcl/ecs-scene-utils";
+import { Delay, TriggerBoxShape, TriggerComponent } from "@dcl/ecs-scene-utils";
+import { DifficultyData } from "./data/difficulty-data";
+import { EnemyData } from "./data/enemy-data";
 import { GameState } from "./game-states";
 import { Waypoint, WaypointManager } from "./map-pathing";
 //object that represents an enemy in scene
 export class EnemyUnitObject extends Entity
 {
     //whether unit is in use
-    isAlive:boolean = false;
+    IsAlive:boolean = false;
 
     //access index
-    index:number;
+    private index:number;
+    get Index():number { return this.index; };
 
     //unit type
-    type:number = 0;
+    Type:number = 0;
 
     //unit survival details
-    unitHealthCur:number = 0;
-    unitHealthMax:number = 0;
-    unitArmour:number = 0;
+    HealthCur:number = 0;
+    HealthMax:number = 0;
+    Armour:number = 0;
 
     //unit health bar
     healthBarCur:Entity;
-    //healthBarMax:Entity;
+
+    //unit object
+    unitAvatar:Entity;
 
     //unit system
     unitSystem:EnemyUnitSystem;
 
-    //targeting
-    TriggerComponent:TriggerComponent;
-
     //callbacks    
     OnDeath:(index:number) => void;
 
-    //constructor
-    constructor(ind:number, healthShapeCur:GLTFShape, healthShapeMax:GLTFShape, triggerShape:TriggerBoxShape, onAttackEvent:()=>void, onDeathEvent:(index:number)=>void)
+    /**
+     * constructor
+     * @param index unique access index
+     * @param healthShapeCur shape reference for displaying current health
+     * @param triggerShape shape reference for collision interaction
+     * @param unitAttack callback for unit attack
+     * @param unitDeath callback for unit death
+     */
+    public constructor(index:number, healthShapeCur:GLTFShape, triggerShape:TriggerBoxShape, unitAttack:()=>void, unitDeath:(index:number)=>void)
     {
-        super();
-        this.index = ind;
-
         //object
+        super();
         this.addComponent(new Transform
         ({
             position: new Vector3(0,0,0),
             scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
+
+        //data
+        this.index = index;
 
         //health bar
         //  current
@@ -67,24 +77,22 @@ export class EnemyUnitObject extends Entity
             rotation: new Quaternion().setEuler(0,0,0)
         }));
         this.healthBarCur.setParent(this);
-        //  max
-        //TODO: find out why inverted normals are still being rendered as a full object, not just interior
-        /*this.healthBarMax = new Entity();
-        this.healthBarMax.addComponent(healthShapeMax);
-        this.healthBarMax.addComponent(new Transform
+
+        //unit object
+        this.unitAvatar = new Entity();
+        this.unitAvatar.addComponent(new Transform
         ({
-            position: new Vector3(0,2,0),
-            scale: new Vector3(0.99,0.99,0.99),
+            position: new Vector3(0,0,0),
+            scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
-        this.healthBarMax.setParent(this);*/
+        this.unitAvatar.setParent(this);
 
-        //system
-        this.unitSystem = new EnemyUnitSystem(this.index, this, onAttackEvent);
+        //unit system
+        this.unitSystem = new EnemyUnitSystem(this.Index, this, this.unitAvatar, unitAttack);
 
         //trigger
-        //  component
-        this.TriggerComponent = this.addComponent(
+        this.addComponent(
             new TriggerComponent(
                 triggerShape,
                 {
@@ -95,64 +103,151 @@ export class EnemyUnitObject extends Entity
         );
 
         //callbacks
-        this.OnDeath = onDeathEvent;
+        this.OnDeath = unitDeath;
     }
 
-    //prepares the unit for use, setting up their survival details for the given wave
-    //  the unit is then pushed to a spawn point and begins traversal
-    Initialize(type:number, wave:number)
+    /**
+     * prepares the unit for use, setting up their survival details for the given wave
+     *  the unit is then pushed to a spawn point and begins traversal
+     * @param type index of definition this unit will be typed as
+     * @param shape shape object to change to
+     * @returns reference to this unit
+     */
+    public Initialize(type:number, shape:GLTFShape):EnemyUnitObject
     {
         //claim unit
-        this.isAlive = true;
+        this.IsAlive = true;
 
         //set type
-        this.type = type;
+        this.Type = type;
 
         //calculate survivability
-        this.unitHealthCur = 100;
-        this.unitHealthMax = 100;
-        this.unitArmour = 0;
-
+        this.HealthMax = (EnemyData[type].ValueHealthBase + (EnemyData[type].ValueHealthGrowth * GameState.WaveCur)) * (DifficultyData[GameState.DifficultyCur].EnemyHealthPercent / 100);
+        this.HealthCur = this.HealthMax;
+        this.Armour = (EnemyData[type].ValueArmourBase + (EnemyData[type].ValueArmourGrowth * GameState.WaveCur)) * (DifficultyData[GameState.DifficultyCur].EnemyArmorPercent / 100);
+        
         //set waypoints
-        this.unitSystem.SetTarget(WaypointManager.INSTANCE.GetSpawnPoint(), true);
+        this.unitSystem.SetTarget(WaypointManager.Instance.GetSpawnPoint(), true);
+        this.unitSystem.unitMoveSpeed = EnemyData[type].ValueSpeed * (DifficultyData[GameState.DifficultyCur].EnemySpeedPercent / 100);
+        this.unitSystem.attackLength = EnemyData[type].ValueAttackIntervalFull;
+        this.unitSystem.attackDamagePeriod = EnemyData[type].ValueAttackIntervalDamage;
+        
+        if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": unit initialized, health = "+this.HealthMax.toString()+", armour = "+this.Armour.toString()+", speed = "+this.unitSystem.unitMoveSpeed.toString()); }
 
         //reset health bar
+        this.healthBarCur.getComponent(Transform).position = new Vector3(EnemyData[type].HealthPos[0],EnemyData[type].HealthPos[1],EnemyData[type].HealthPos[2]);
         this.healthBarCur.getComponent(Transform).scale = new Vector3(1,1,1);
 
-        //activate in engine
-        this.SetEngineState(true);
+        //process shape change
+        if(this.unitAvatar.hasComponent(GLTFShape))
+        {
+            //check if shape must be removed
+            if(this.Type != type)
+            {
+                //remove shape
+                this.unitAvatar.removeComponent(GLTFShape);
+            }
+        }
+        if(!this.unitAvatar.hasComponent(GLTFShape))
+        {
+            //add new shape
+            this.unitAvatar.addComponent(shape);
+
+            //apply type specific details
+            this.unitAvatar.getComponent(Transform).position = new Vector3(EnemyData[type].ObjectOffset[0], EnemyData[type].ObjectOffset[1], EnemyData[type].ObjectOffset[2]);
+            this.unitAvatar.getComponent(Transform).scale = new Vector3(EnemyData[type].ObjectScale[0], EnemyData[type].ObjectScale[1], EnemyData[type].ObjectScale[2]);
+        }
+
+        //clean up existing delay
+        if(this.hasComponent(Delay))
+        {
+            this.removeComponent(Delay)
+        }
+        
+        return this;
     }
 
-    //take damage
-    public TakeDamage(num:number)
+    /**
+     * applies damage to enemy unit, calculating damage to armour and health
+     *  damage to health is applied after armour is removed
+     * @param dam amount of health to be removed from unit
+     * @param pen amount of armour ignored when dealing damage
+     * @param rend amount of armour to be removed from unit
+     * @returns boolean: true = unit alive, false = unit dead
+     */
+    public ApplyDamage(dam:number, pen:number, rend:number):boolean
     {
-        this.unitHealthCur -= num;
-        if(GameState.EnemyDebugging) { log("health remaining: "+this.unitHealthCur.toString()) }
-        if(this.unitHealthCur <= 0)
+        if(this.HealthCur == 0) 
         {
-            //call game manager for death
-            this.OnDeath(this.index);
+            if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": ERROR attempting to damage already dead enemy, could be a unit clean-up desync") }
+            return true;
+        }
+
+        //remove health
+        this.HealthCur -= dam - Math.max(0, this.Armour-pen);
+
+        //clamp health
+        if(this.HealthCur < 0) this.HealthCur = 0;
+
+        //adjust health bar
+        this.healthBarCur.getComponent(Transform).scale = new Vector3(this.HealthCur/this.HealthMax, this.HealthCur/this.HealthMax, this.HealthCur/this.HealthMax);
+
+        if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": damage dealt to unit, health remaining = "+this.HealthCur.toString()) }
+        if(this.HealthCur == 0)
+        {
+            //play death anim
+            this.unitSystem.SetAnimationState(3);
+
+            //hide entity from scene after death
+            this.addComponent( new Delay(EnemyData[this.Type].ValueDeathLength*(1000/EnemyData[this.Type].ValueDeathLengthScale), () => 
+            { 
+                log("Enemy Unit "+this.index.toString()+": death delay completed, unit is being reset");
+                this.IsAlive = false;
+                this.SetEngineState(false);
+            }) );
+
+            //halt movement
+            engine.removeSystem(this.unitSystem);
+
+            //death callback
+            this.OnDeath(this.Index);
+
+            return false;
         }
         else
         {
-            //adjust health bar
-            this.healthBarCur.getComponent(Transform).scale = new Vector3(this.unitHealthCur/this.unitHealthMax, this.unitHealthCur/this.unitHealthMax, this.unitHealthCur/this.unitHealthMax);
         }
+
+        //remove armour
+        this.Armour -= this.Armour;
+        if(this.Armour >= 0)
+        {
+            this.Armour = 0;
+        }
+
+        return true;
     }
     
-    //de/activates object and system within the engine state
-    SetEngineState(state:boolean)
+    /**
+     * de/activates object and system within the engine state
+     * @param state new state for object: true = object is active, false = object is hidden
+     */
+    public SetEngineState(state:boolean)
     {
         //check if state change is needed
         if(this.isAddedToEngine() != state)
         {
             if(state)
             {
+                //add to engine
                 engine.addEntity(this);
                 engine.addSystem(this.unitSystem);
+                //  prepare system
+                this.unitSystem.Initialize(this.Type);
             }
             else
             {
+                //remove from engine
                 engine.removeEntity(this);
                 engine.removeSystem(this.unitSystem);
             }
@@ -160,17 +255,17 @@ export class EnemyUnitObject extends Entity
     }
 }
 //handles all real-time processing for the unit, including movement and damage over time
-//  TODO: death anim timer, wait given amount of time after enemy has been killed to allow the death animation to play before being reassigned
+//TODO: push unit effects back into the main fork after optimizations are completed
 export class EnemyUnitSystem implements ISystem
 {
-    index:number;
+    private index:number;
+    private type:number;
 
     //objects
-    //  unit avatar
     unitObject:Entity;
+    unitAvatar:Entity;
     unitObjectTransform:Transform;
-    //  unit health bar
-
+    
     //movement
     seed:number = -1;
     distanceTotal:number = 0;
@@ -182,27 +277,84 @@ export class EnemyUnitSystem implements ISystem
     //  current waypoint 
     waypoint:Waypoint|undefined;
     waypointTransform:Transform|undefined;
-
+    
     //attack
-    onAttack: () => void;
-    attackLength:number = 0.85;
-    attackTimer:number = 0;
+    //  damage is dealt a portion of the way through the attack animation
+    //  ex: if attackDamagePeriod is 0.5, damage is dealt 0.5s after the attack animation has begun
+    isAttacking:boolean = false;
+    hasDamaged:boolean = false;
+    attackLength:number = 0;
+    attackDamagePeriod:number = 0;
+    attackTimer:number[] = [0,0];
 
-    //initializes unit upon object creation
-    //  takes in index for this unit and starting waypoint
-    constructor(index:number, obj:Entity, onAttackEvent:()=>void)
+    //animatons
+    animator:undefined|Animator;
+    animations:AnimationState[] = [];
+
+    public SetAnimationState(state:number)
     {
-        this.index = index;
+        //disable all other animations
+        this.animations[0].stop();
+        this.animations[1].stop();
+        this.animations[2].stop();
+        this.animations[3].stop();
 
-        //create enemy unit object
-        this.unitObject = obj;
-        this.unitObjectTransform = this.unitObject.getComponent(Transform);
-
-        //link event
-        this.onAttack = onAttackEvent;
+        //activate targeted animation
+        this.animations[state].play();
     }
 
-    //processing over time
+    //callbacks
+    onAttack: () => void;
+
+    /**
+     * constructor
+     * @param object link to unit object
+     * @param unitAttack callback for unit attack
+     */
+    public constructor(ind:number, object:Entity, avatar:Entity, unitAttack:()=>void)
+    {
+        //assign index
+        this.index = ind;
+        this.type = -1;
+
+        //create enemy unit object
+        this.unitObject = object;
+        this.unitAvatar = avatar;
+        this.unitObjectTransform = this.unitObject.getComponent(Transform);
+        
+        //link event
+        this.onAttack = unitAttack;
+    }
+
+    /**
+     * resets to initial state 
+     */
+    public Initialize(type:number)
+    {
+        //set type
+        this.type = type;
+
+        //animations
+        //  controller
+        if(this.unitAvatar.hasComponent(Animator)) { this.unitAvatar.removeComponent(Animator); }
+        this.animator = this.unitAvatar.addComponent(new Animator());
+        //  states
+        this.animations = [];
+        this.animations.push(new AnimationState('anim_idle', { looping: true, speed: 1 }));
+        this.animations.push(new AnimationState('anim_walk', { looping: true, speed: 1 }));
+        this.animations.push(new AnimationState('anim_attack', { looping: true, speed: 1 }));
+        this.animations.push(new AnimationState('anim_death', { looping: true, speed: EnemyData[this.type].ValueDeathLengthScale }));
+        //  clips
+        this.animator.addClip(this.animations[0]);
+        this.animator.addClip(this.animations[1]);
+        this.animator.addClip(this.animations[2]);
+        this.animator.addClip(this.animations[3]);
+    }
+
+    /**
+     * processing over time
+     * @param dt delta time
+     */
     update(dt: number) 
     {
         //avatar is moving towards waypoint
@@ -230,60 +382,82 @@ export class EnemyUnitSystem implements ISystem
             else
             {
                 //attempt to get next waypoint
-                let nextWP:undefined|Waypoint = WaypointManager.INSTANCE.GetNextWaypoint(this.waypoint.Index, this.seed);
+                let nextWP:undefined|Waypoint = WaypointManager.Instance.GetNextWaypoint(this.waypoint.Index, this.seed);
                 //get next waypoint
                 if(nextWP != undefined)
                 {
+                    //set animation to walking
+                    this.SetAnimationState(1);
+
+                    //set next waypoint
                     this.SetTarget(nextWP);
                 }
                 //arrived at player's base
                 else
                 {
-                    if(GameState.EnemyDebugging){ log("unit arrived at final waypoint"); }
+                    if(GameState.debuggingEnemy){ log("Enemy System "+this.index.toString()+": enemy unit arrived at final waypoint"); }
                     this.arrived = true;
-
-                    //debugging: kill unit
-                    //WaveManager.INSTANCE.EnemyDeath(this.index);
-
-                    //change animations to attack
-                    //this.unitObject.getComponent(Animator).getClip('Walking').stop();
-                    //this.unitObject.getComponent(Animator).getClip('Attacking').play();
-
-                    //reset timer
-                    this.attackTimer = this.attackLength;
-                    
-                    this.onAttack();
                 }
             }
         }
         //unit has arrived at player's base: process attack timer, then deal damage and despawn enemy
         else
         {
-            //if timer has run out
-            if(this.attackTimer <= 0)
+            //reset attack
+            if(!this.isAttacking)
             {
-                //deal damage to player
-                this.onAttack();
+                //timing
+                this.isAttacking = true;
+                this.hasDamaged = false;
+                this.attackTimer[0] = this.attackLength-this.attackDamagePeriod;
+                this.attackTimer[1] = this.attackDamagePeriod;
 
-                //reset timer
-                this.attackTimer = this.attackLength;
+                //animation to attack
+                this.SetAnimationState(2);
             }
+
+            //if damage has not been dealt yet
+            if(!this.hasDamaged)
+            {
+                //count ticker down
+                this.attackTimer[0] -= dt;
+
+                //check if damage should be dealt
+                if(this.attackTimer[0] <= 0)
+                {
+                    if(GameState.debuggingEnemy) log("Enemy System "+this.index.toString()+": enemy attacking player base");
+                    //deal damage
+                    this.hasDamaged = true;
+                    this.onAttack();
+                }
+            }  
             else
             {
-                //tick down timer
-                this.attackTimer -= dt;
-            }
+                //count ticker down
+                this.attackTimer[1] -= dt;
+                
+                //check if attack has finished
+                if(this.attackTimer[1] <= 0)
+                {
+                    //finish attack
+                    this.isAttacking = false;
+                }
+            } 
         }
     }
 
-    //sets the provided waypoint as the target and begins traversal
-    public SetTarget(wp:Waypoint, spawn:boolean = false)
+    /**
+     * sets the provided waypoint as the target and begins traversal towards position
+     * @param waypoint waypoint object to be set as target
+     * @param spawn whether waypoint is a spawnpoint, if true unit is repositioned to location
+     */
+    public SetTarget(waypoint:Waypoint, spawn:boolean = false)
     {
-        if(GameState.EnemyDebugging){ log("unit is now targeting waypoint "+wp.Index); }
+        if(GameState.debuggingEnemy){ log("Enemy System "+this.index.toString()+": unit is now targeting waypoint "+waypoint.Index); }
 
         //set up next waypoint
-        this.waypoint = wp;
-        this.waypointTransform = wp.getComponent(Transform);
+        this.waypoint = waypoint;
+        this.waypointTransform = this.waypoint.getComponent(Transform);
 
         //place object at given waypoint
         if(spawn)
@@ -291,8 +465,11 @@ export class EnemyUnitSystem implements ISystem
             this.unitObjectTransform.position = new Vector3(this.waypointTransform.position.x, this.waypointTransform.position.y, this.waypointTransform.position.z);
             
             this.seed = Math.floor((Math.random()*64)+64);   //randomize seed
-            this.distanceTotal = WaypointManager.INSTANCE.GetRouteDistance(this.waypoint.Index, this.seed);  //get total distance
+            this.distanceTotal = WaypointManager.Instance.GetRouteDistance(this.waypoint.Index, this.seed);  //get total distance
         }
+
+        //update distance estimation
+        this.distanceTotal = WaypointManager.Instance.GetRouteDistance(this.waypoint.Index, this.seed);
 
         //start traversal
         this.arrived = false;

@@ -36,11 +36,19 @@
 */
 export const EnemyData =
 [
-    //small enemies
+    //### SMALL ENEMIES ###
     //  swarmer
     {
-        //model path
-        Path:"slug",
+        //object
+        ObjectPath:"enemyFiller",
+        ObjectOffset:[0,1,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,2,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Swarmer",
         DisplayDesc:"small, fast moving creature that travels in large groups",
@@ -48,38 +56,58 @@ export const EnemyData =
         SpawnType:0,
         SpawnCost:0.45,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.60,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:2,
         //mechanic
         Attributes: ""
     },
     //  drone
     {
         //model path
-        Path:"slug",
+        ObjectPath:"enemyDrone",
+        ObjectOffset:[0,0,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,4,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Drone",
         DisplayDesc:"Agile flying unit",
         //spawning
         SpawnType:0,
-        SpawnCost:0.65,
+        SpawnCost:0.75,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.65,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:3,
         //mechanic
         Attributes: ""
     },
-    //medium enemies
+    //### MEDIUM ENEMIES ###
     //  walker
     {
         //model path
-        Path:"slug",
+        ObjectPath:"enemyFiller",
+        ObjectOffset:[0,0,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,4,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Walker",
         DisplayDesc:"Standard unit",
@@ -87,19 +115,29 @@ export const EnemyData =
         SpawnType:1,
         SpawnCost:1,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.5,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:4,
         //mechanic
         Attributes: ""
     },
-    //large enemies
+    //### LARGE ENEMIES ###
     //  bruiser
     {
         //model path
-        Path:"slug",
+        ObjectPath:"enemyFiller",
+        ObjectOffset:[0,0,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,4,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Bruiser",
         DisplayDesc:"Tanky unit",
@@ -107,19 +145,29 @@ export const EnemyData =
         SpawnType:2,
         SpawnCost:3,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.45,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:12,
         //mechanic
         Attributes: ""
     },
-    //boss enemies
+    //### BOSS ENEMIES ###
     //  shielder
     {
         //model path
-        Path:"slug",
+        ObjectPath:"enemyFiller",
+        ObjectOffset:[0,0,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,4,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Shielder",
         DisplayDesc:"Provides a damage reduction shield to all surrounding units.",
@@ -127,30 +175,42 @@ export const EnemyData =
         SpawnType:3,
         SpawnCost:30,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.45,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:120,
         //mechanic
         Attributes: ""
     },
     //  Spawner
     {
         //model path
-        Path:"slug",
+        ObjectPath:"enemyFiller",
+        ObjectOffset:[0,0,0],
+        ObjectScale:[0.5,0.5,0.5],
+        HealthPos:[0,4,0],
+        //timing
+        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Mobile Spawner",
-        DisplayDesc:"Periodically spawns enemies",
+        DisplayDesc:"Periodically spawns enemies around the unit",
         //spawning
         SpawnType:3,
         SpawnCost:50,
         //survival
-        ValueSpeed:5,
+        ValueSpeed:0.45,
         ValueHealthBase:20,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
+        //rewards
+        ValueRewards:200,
         //mechanic
         Attributes: ""
     },

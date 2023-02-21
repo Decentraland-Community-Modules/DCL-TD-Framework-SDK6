@@ -8,51 +8,60 @@ import { List, Dictionary } from "src/utilities/collections";
 import { EnemyData } from "./data/enemy-data";
 import { EnemyUnitObject } from "./enemy-entity";
 import { GameState } from "./game-states";
-export class EnemyManager extends Entity
+export class EnemyUnitManager extends Entity
 {
-    static INSTANCE:EnemyManager;
+    //access pocketing
+    private static instance:undefined|EnemyUnitManager;
+    public static get Instance():EnemyUnitManager
+    {
+        //ensure instance is set
+        if(EnemyUnitManager.instance === undefined)
+        {
+            EnemyUnitManager.instance = new EnemyUnitManager();
+        }
 
-    //index for current scroll location
-    iterationIndex:number;
-    iterationHalt:number;
+        return EnemyUnitManager.instance;
+    }
 
     //max allowed count of units allowed
-    enemySizeMax:number = 30;
+    private enemySizeMax:number = 100;
     //number of enemies in use
-    enemySizeCur:number;
+    enemySizeCur:number = 0;
     //number of enemies remaining in wave
-    enemySizeRemaining:number;
+    enemySizeRemaining:number = 0;
 
     //access collections
     //  list of ALL enemy unit objects
-    enemyList:List<EnemyUnitObject>;
+    enemyList:List<EnemyUnitObject> = new List<EnemyUnitObject>();
     //  dict access by unit index
-    enemyDict:Dictionary<EnemyUnitObject>;
+    enemyDict:Dictionary<EnemyUnitObject> = new Dictionary<EnemyUnitObject>();
     //  sorted lists of enemy objects by type
-    enemyTypeDict:Dictionary<List<EnemyUnitObject>>;
+    enemyTypeDict:Dictionary<List<EnemyUnitObject>> = new Dictionary<List<EnemyUnitObject>>();
 
     //reusable shapes for health bars
-    enemyHealthBarShapeCur:GLTFShape;
-    enemyHealthBarShapeMax:GLTFShape;
+    enemyHealthBarShapeCur:GLTFShape = new GLTFShape("models/enemy/core/healthDisplayCur.glb");
+    enemyHealthBarShapeMax:GLTFShape = new GLTFShape("models/enemy/core/healthDisplayMax.glb");
 
     //reusable shape attached to enemies for collision
-    enemyTriggerShape:TriggerBoxShape;
+    enemyTriggerShape:TriggerBoxShape = new TriggerBoxShape();
     //assortment of all enemy models, by type
-    enemyModelDict:Dictionary<GLTFShape>;
+    enemyModelDict:Dictionary<GLTFShape> = new Dictionary<GLTFShape>();
 
-    //required events
-    UnitAttack:() => void;
-    private unitAttack() { log("enemy manager callback not set - start wave"); }
-    UnitDeath:(index:number) => void;
-    private unitDeath(index:number) { log("enemy manager callback not set - unit death:"+index.toString()); }
+    //callbacks
+    //  unit attack
+    public UnitAttack:() => void;
+    private unitAttack() { log("Enemy Manager: callback not set - start wave"); }
+    //  unit death
+    public UnitDeath:(index:number) => void;
+    private unitDeath(index:number) { log("Enemy Manager: callback not set - unit death:"+index.toString()); }
 
-    //constructor
-    constructor()
+    /**
+     * constructor
+     */
+    private constructor()
     {
-        super();
-        EnemyManager.INSTANCE = this;
-
         //object
+        super();
         this.addComponent(new Transform
         ({
             position: new Vector3(0,0,0),
@@ -60,41 +69,23 @@ export class EnemyManager extends Entity
             rotation: new Quaternion().setEuler(0,0,0)
         }));
 
-        //data
-        this.iterationIndex = 0;
-        this.iterationHalt = 0;
-        this.enemySizeCur = 0;
-        this.enemySizeRemaining = 0;
-
-        //access collections
-        //  enemies
-        this.enemyList = new List<EnemyUnitObject>();
-        this.enemyDict = new Dictionary<EnemyUnitObject>();
-        //  enemies by type
-        this.enemyTypeDict = new Dictionary<List<EnemyUnitObject>>();
-
-        //health bar shape
-        this.enemyHealthBarShapeCur = new GLTFShape("models/enemy/core/healthDisplayCur.glb");
-        this.enemyHealthBarShapeMax = new GLTFShape("models/enemy/core/healthDisplayMax.glb");
-
-        //trigger shape
-        this.enemyTriggerShape = new TriggerBoxShape();
-        //models
-        this.enemyModelDict = new Dictionary<GLTFShape>();
+        //generate enemy unit shapes
         for(var i:number=0; i<EnemyData.length; i++)
         {
-            this.enemyModelDict.addItem(i.toString(), new GLTFShape("models/enemy/"+EnemyData[i].Path+".glb"));
+            this.enemyModelDict.addItem(i.toString(), new GLTFShape("models/enemy/"+EnemyData[i].ObjectPath+".glb"));
         }
 
-        //set default delegates
+        //set filler callbacks
         this.UnitAttack = this.unitAttack;
         this.UnitDeath = this.unitDeath;
     }
 
-    //initializes the system for a new game
-    Initialize()
+    /**
+     * initializes the system for a new game, clearing all units
+     */
+    public Initialize()
     {
-        if(GameState.EnemyDebugging) { log("enemy manager - initializing..."); }
+        if(GameState.debuggingEnemy) { log("Enemy Manager: - initializing..."); }
 
         //pre-warm all objects
         while(this.enemyList.size() < this.enemySizeMax)
@@ -104,25 +95,31 @@ export class EnemyManager extends Entity
 
         //ensure every unit is disabled
         this.ClearUnits();
-        if(GameState.EnemyDebugging) { log("enemy manager - initialized!\n\tenemy count: "+this.enemyList.size()); }
+        if(GameState.debuggingEnemy) { log("Enemy Manager: - initialized!\n\tenemy count: "+this.enemyList.size()); }
     }
 
-    //creates a new unit, readying it to be used by this system
-    AddEnemyUnit()
+    /**
+     * creates a new unit, readying it to be used by this system
+     */
+    public AddEnemyUnit()
     {
         //create object
         const index:number = this.enemyList.size();
-        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyHealthBarShapeMax, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath);
+        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath);
         obj.setParent(this);
         
         //add to collections
         this.enemyList.addItem(obj);
-        this.enemyDict.addItem(obj.index.toString(), obj);
+        this.enemyDict.addItem(obj.Index.toString(), obj);
     }
 
-    //returns the next available unit
-    //  optimised for large collections
-    GetEnemyUnit():null|EnemyUnitObject
+    /**
+     * attempts to find an unused/out of use unit object
+     * @returns reference to this unit or undefined if unit was not found
+     */
+    private iterationIndex:number = 0;
+    private iterationHalt:number = 0;
+    public GetEnemyUnit():undefined|EnemyUnitObject
     {
         //reset processing index
         this.iterationHalt = this.iterationIndex;
@@ -134,71 +131,84 @@ export class EnemyManager extends Entity
         while(true)
         {            
             //check current units for a free unit
-            if(!this.enemyList.getItem(this.iterationIndex).isAlive)
+            if(!this.enemyList.getItem(this.iterationIndex).IsAlive)
             {
                 return this.enemyList.getItem(this.iterationIndex);
             }
 
             //exit after checking the entry index
-            if(this.iterationIndex == this.iterationHalt) {return null;}
+            if(this.iterationIndex == this.iterationHalt) {return undefined;}
 
             //push next index
             this.iterationIndex++; 
             if(this.iterationIndex >= this.enemyList.size()) { this.iterationIndex = 0; }
         }
     }
+    
 
-    //attempts to redefines add a unit of the given type into the game, placing it in the engine and 
-    //  starting its movement along the given waypoint path. this function pulls from a limited pooling
-    //  of units, so it can fail if all units are in use.
-    AssignEnemyUnit(type:number, wave:number):null|EnemyUnitObject
+    public GetEnemyUnitByIndex(index:number):undefined|EnemyUnitObject
     {
-        if(GameState.EnemyDebugging) { log("enemy manager - assigning new enemy of type: "+type.toString()+"..."); }
-        //get object
-        const obj:null|EnemyUnitObject = this.GetEnemyUnit();
-
-        if(obj == null)
+        if(this.enemyDict.containsKey(index.toString()))
         {
-            if(GameState.EnemyDebugging) { log("enemy manager - assignment failed: all units are used."); }
-            return null;
+            return this.enemyDict.getItem(index.toString());
+        }
+        else
+        {
+            return undefined;
+        }
+    }
+
+    /**
+     * attempts to redefines add a unit of the given type into the game, placing it in the engine and 
+     *  starting its movement along the given waypoint path. this function pulls from a limited pooling
+     *  of units, so it can fail if all units are in use.
+     * @param type index of definition this unit will be typed as
+     * @returns reference to this unit or undefined if unit was not found
+     */
+    public AssignEnemyUnit(type:number):undefined|EnemyUnitObject
+    {
+        if(GameState.debuggingEnemy) { log("Enemy Manager: - assigning new enemy of type: "+type.toString()+"..."); }
+        //get object
+        const obj:undefined|EnemyUnitObject = this.GetEnemyUnit();
+
+        if(obj == undefined)
+        {
+            if(GameState.debuggingEnemy) { log("Enemy Manager: - assignment failed: all units are used."); }
+            return undefined;
         }
 
         //disable enemy
         obj.SetEngineState(false);
 
-        //process shape change
-        if(obj.hasComponent(GLTFShape))
-        {
-            //check if shape must be removed
-            if(obj.type != type)
-            {
-                //remove shape
-                obj.removeComponent(GLTFShape);
-            }
-        }
-        if(!obj.hasComponent(GLTFShape))
-        {
-            //add new shape
-            obj.addComponent(this.enemyModelDict.getItem(type.toString()));
-        }
-
         //initialize with new data
-        obj.Initialize(type, wave);
+        obj.Initialize(type, this.enemyModelDict.getItem(type.toString()));
         this.enemySizeCur++;
 
-        if(GameState.EnemyDebugging) { log("enemy manager - assigned new enemy!"); }
+        //disable enemy
+        obj.SetEngineState(true);
+
+        if(GameState.debuggingEnemy) { log("Enemy Manager: - assigned new enemy!"); }
         return obj;
     }
 
-    //deals the given amount of damage to the enemy of the given index 
-    DamageUnit(index:number, damage:number)
+    /**
+     * deals the given amount of damage to the enemy of the given index
+     * @param index access index of unit to be damaged
+     * @param dam amount of health to be removed from unit
+     * @param pen amount of armour ignored when dealing damage
+     * @param rend amount of armour to be removed from unit
+     * @returns boolean: true = unit alive, false = unit dead
+     */
+    public DamageUnit(index:number, dam:number, pen:number, rend:number):boolean
     {
-        //deal damage
-        this.enemyDict.getItem(index.toString()).TakeDamage(damage);
+        //access unit and pass call down
+        return this.enemyDict.getItem(index.toString()).ApplyDamage(dam, pen, rend);
     }
 
-    //disables all units on the game field
-    ClearUnits()
+    /**
+     * disables all units on the game field
+     */
+    public ClearUnits()
     {
         for(var i:number=0; i<this.enemyList.size(); i++)
         {
@@ -208,11 +218,14 @@ export class EnemyManager extends Entity
         this.enemySizeRemaining = 0;
     }
 
-    //clears the unit of the given index, removing them from the field
-    ClearUnit(index:number)
+    /**
+     * clears the unit of the given index, removing them from the field
+     * @param index access index of unit to be removed
+     */
+    public ClearUnit(index:number)
     {
         //unit is not being used
-        this.enemyDict.getItem(index.toString()).isAlive = false;
+        this.enemyDict.getItem(index.toString()).IsAlive = false;
 
         //remove unit from engine
         this.enemyDict.getItem(index.toString()).SetEngineState(false);
