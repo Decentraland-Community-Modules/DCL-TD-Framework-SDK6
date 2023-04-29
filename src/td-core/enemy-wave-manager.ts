@@ -48,6 +48,17 @@ export class EnemyWaveManager
     {
         return this.enemyWaves[GameState.WaveCur];
     }
+    /**
+     * 
+     */
+    GetEnemyUnitType(wave:number, index:number)
+    {
+        return this.enemyWaves[wave].enemyUnits[index].enemyIndex;
+    }
+    GetEnemyUnitCount(wave:number, index:number)
+    {
+        return this.enemyWaves[wave].enemyUnits[index].enemyCount;
+    }
 
     //enemy data keys by type
     private enemyTypes:number[][] = [[],[],[],[]];
@@ -95,6 +106,10 @@ export class EnemyWaveManager
             this.enemyWaves[i].enemyUnits[0].enemyCount = Math.floor(utility/EnemyData[type].SpawnCost/2);
             this.enemyWaves[i].enemyUnits[1].enemyIndex = index1;
             this.enemyWaves[i].enemyUnits[1].enemyCount = Math.floor(utility/EnemyData[type].SpawnCost/2);
+
+            //DEBUG: set enemy index to a certain value
+            //this.enemyWaves[i].enemyUnits[0].enemyIndex = 3;
+            //this.enemyWaves[i].enemyUnits[1].enemyIndex = 3;
 
             //check for boss interval
             if(i != 1 && ((i+1)%this.bossInterval) == 0) 

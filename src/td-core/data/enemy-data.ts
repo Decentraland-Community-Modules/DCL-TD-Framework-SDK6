@@ -40,24 +40,25 @@ export const EnemyData =
     //  swarmer
     {
         //object
-        ObjectPath:"enemyFiller",
-        ObjectOffset:[0,1,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,2,0],
+        ObjectPath:"enemyCrawler",
+        ObjectOffset:[0,0.1,0],
+        ObjectScale:[0.05,0.05,0.05],
+        HealthPos:[0,0.5,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
         ValueDeathLength:1.4,   //length of death animation (in seconds)
         ValueDeathLengthScale:2,//speed of death animation
         //display
-        DisplayName:"Swarmer",
-        DisplayDesc:"small, fast moving creature that travels in large groups",
+        DisplayName:"Crawler",
+        DisplayDesc:"Small, fast moving unit that travels in large groups",
         //spawning
         SpawnType:0,
         SpawnCost:0.45,
         //survival
         ValueSpeed:0.60,
-        ValueHealthBase:20,
+        ValueHealthBase:32,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
@@ -70,9 +71,10 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyDrone",
-        ObjectOffset:[0,0,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,4,0],
+        ObjectOffset:[0,0.5,0],
+        ObjectScale:[0.25,0.25,0.25],
+        HealthPos:[0,1,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
@@ -86,7 +88,7 @@ export const EnemyData =
         SpawnCost:0.75,
         //survival
         ValueSpeed:0.65,
-        ValueHealthBase:20,
+        ValueHealthBase:32,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
@@ -99,10 +101,11 @@ export const EnemyData =
     //  walker
     {
         //model path
-        ObjectPath:"enemyFiller",
-        ObjectOffset:[0,0,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,4,0],
+        ObjectPath:"enemyBruiser",
+        ObjectOffset:[0,0.5,0],
+        ObjectScale:[0.25,0.25,0.25],
+        HealthPos:[0,1,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
@@ -116,7 +119,7 @@ export const EnemyData =
         SpawnCost:1,
         //survival
         ValueSpeed:0.5,
-        ValueHealthBase:20,
+        ValueHealthBase:32,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
@@ -129,10 +132,11 @@ export const EnemyData =
     //  bruiser
     {
         //model path
-        ObjectPath:"enemyFiller",
-        ObjectOffset:[0,0,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,4,0],
+        ObjectPath:"enemyBruiser",
+        ObjectOffset:[0,0.15,0],
+        ObjectScale:[0.25,0.25,0.25],
+        HealthPos:[0,0.75,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
@@ -146,7 +150,7 @@ export const EnemyData =
         SpawnCost:3,
         //survival
         ValueSpeed:0.45,
-        ValueHealthBase:20,
+        ValueHealthBase:32,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
@@ -159,10 +163,11 @@ export const EnemyData =
     //  shielder
     {
         //model path
-        ObjectPath:"enemyFiller",
-        ObjectOffset:[0,0,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,4,0],
+        ObjectPath:"enemyBruiser",
+        ObjectOffset:[0,0.5,0],
+        ObjectScale:[0.25,0.25,0.25],
+        HealthPos:[0,1,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
@@ -176,7 +181,7 @@ export const EnemyData =
         SpawnCost:30,
         //survival
         ValueSpeed:0.45,
-        ValueHealthBase:20,
+        ValueHealthBase:120,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
@@ -188,10 +193,11 @@ export const EnemyData =
     //  Spawner
     {
         //model path
-        ObjectPath:"enemyFiller",
-        ObjectOffset:[0,0,0],
-        ObjectScale:[0.5,0.5,0.5],
-        HealthPos:[0,4,0],
+        ObjectPath:"enemyBruiser",
+        ObjectOffset:[0,0.5,0],
+        ObjectScale:[0.25,0.25,0.25],
+        HealthPos:[0,1,0],
+        HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
@@ -205,7 +211,7 @@ export const EnemyData =
         SpawnCost:50,
         //survival
         ValueSpeed:0.45,
-        ValueHealthBase:20,
+        ValueHealthBase:120,
         ValueHealthGrowth:2.5,
         ValueArmourBase:0,
         ValueArmourGrowth:0,

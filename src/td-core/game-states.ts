@@ -14,7 +14,7 @@ export class GameState
     public static debuggingTower = false;
     //  enemy
     public static debuggingEnemy = false;
-    public static debuggingWave = true;
+    public static debuggingWave = false;
 
     //current game state
     //  0 - idle

@@ -15,19 +15,18 @@
     TODO:
     -a lot of UI update calls are tied to a single var, these can be pushed directly into the var's access
 */
-import { MenuGroup3D } from "src/utilities/menu-group-3D";
 import { DifficultyData } from "./data/difficulty-data";
 import { dataTowers } from "./data/tower-data";
 import { EnemyUnitManager } from "./enemy-manager";
 import { EnemyWaveManager } from "./enemy-wave-manager";
-import { EnemyWaveDisplay } from "./enemy-wave-display";
-import { WaypointManager } from "./map-pathing";
-import { TowerFoundation } from "./tower-entity";
+import { Waypoint, WaypointManager } from "./map-pathing";
+import { TowerFoundation, TowerFrame } from "./tower-entity";
 import { TowerManager } from "./tower-manager";
 import { GameState } from "./game-states";
-import { GameMenu2D } from "./game-menu";
+import { GameMenu } from "./game-menu";
 import { EnemyUnitObject } from "./enemy-entity";
 import { EnemyData } from "./data/enemy-data";
+import { AudioManager } from "src/utilities/audio-manager";
 //management class for tower defence scene
 export class GameManager extends Entity
 {
@@ -44,210 +43,8 @@ export class GameManager extends Entity
         return GameManager.instance;
     }
 
-    //3D menu - game controls
-    //gameMenu3D:MenuGroup3D;
-    //prepares 3D control menu, creating base line display
-    /*private menuSetup3D()
-    {
-        //set up 3D menu
-        //  menu toggle
-        this.gameMenu3D.AdjustMenuToggle(0, new Vector3(1.6,0.05,-1.6));
-        this.gameMenu3D.AdjustMenuToggle(1, new Vector3(0.2,0.2,0.2));
-        //  placement
-        this.gameMenu3D.AdjustMenuParent(0, new Vector3(0,0,2));
-        this.gameMenu3D.AdjustMenuParent(1, new Vector3(0.5,0.5,0.5));
-        //  title
-        //      object
-        this.gameMenu3D.AddMenuObject("Title", 2);
-        this.gameMenu3D.AdjustMenuObject("Title", 0, new Vector3(0,5,0));
-        this.gameMenu3D.AdjustMenuObject("Title", 1, new Vector3(1,1,1));
-        //      title text
-        this.gameMenu3D.AddMenuText("Title", "StageTxt", "TD DEBUGGING");
-        this.gameMenu3D.AdjustTextDisplay("Title", "StageTxt", 0, 7);
-        this.gameMenu3D.AdjustTextObject("Title", "StageTxt", 0, new Vector3(0,0.5,0));
-        //      game state text
-        this.gameMenu3D.AddMenuText("Title", "StateTxt", "--Uninitialized--");
-        this.gameMenu3D.AdjustTextDisplay("Title", "StateTxt", 0, 4);
-        this.gameMenu3D.AdjustTextObject("Title", "StateTxt", 0, new Vector3(0,-0.5,0));
-        //  game difficulty selection display
-        //      object
-        this.gameMenu3D.AddMenuObject("Dif", 1);
-        this.gameMenu3D.AdjustMenuObject("Dif", 0, new Vector3(0,3.2,0));
-        this.gameMenu3D.AdjustMenuObject("Dif", 1, new Vector3(0.925,0.5,1));
-        //      game name text
-        this.gameMenu3D.AddMenuText("Dif", "DifTxt", "DIFFICULTY");
-        this.gameMenu3D.AdjustTextDisplay("Dif", "DifTxt", 0, 6);
-        this.gameMenu3D.AdjustTextObject("Dif", "DifTxt", 1, new Vector3(0.8,2,0.8));
-        //  game difficulty next button
-        //      object
-        this.gameMenu3D.AddMenuObject("DifNext", 0);
-        this.gameMenu3D.AdjustMenuObject("DifNext", 0, new Vector3(2.6,3.2,0));
-        this.gameMenu3D.AdjustMenuObject("DifNext", 1, new Vector3(0.5,0.5,1));
-        //      text
-        this.gameMenu3D.AddMenuText("DifNext", "DifNextTxt", ">");
-        this.gameMenu3D.AdjustTextDisplay("DifNext", "DifNextTxt", 0, 12);
-        this.gameMenu3D.AdjustTextObject("DifNext", "DifNextTxt", 1, new Vector3(0.8,2,0.8));
-        //  primary action: next game difficulty
-        this.gameMenu3D.GetMenuObject("DifNext").addComponent
-        (
-            //add click action listener
-            new OnPointerDown
-            (
-                (e) =>
-                {
-                    //select next difficulty
-                    this.setDifficulty(GameState.DifficultyCur+1);
-
-                    if(GameState.debuggingManager) { log("game manager increasing difficulty: "+DifficultyData[GameState.DifficultyCur].DisplayName); }
-                },
-                {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] Increase Difficulty",
-                    distance: 32
-                }
-            )
-        );
-        //  game difficulty next button
-        //      object
-        this.gameMenu3D.AddMenuObject("DifPrev", 0);
-        this.gameMenu3D.AdjustMenuObject("DifPrev", 0, new Vector3(-2.6,3.2,0));
-        this.gameMenu3D.AdjustMenuObject("DifPrev", 1, new Vector3(0.5,0.5,1));
-        //      text
-        this.gameMenu3D.AddMenuText("DifPrev", "DifPrevTxt", "<");
-        this.gameMenu3D.AdjustTextDisplay("DifPrev", "DifPrevTxt", 0, 12);
-        this.gameMenu3D.AdjustTextObject("DifPrev", "DifPrevTxt", 1, new Vector3(0.8,2,0.8));
-        //  primary action: prev game difficulty
-        this.gameMenu3D.GetMenuObject("DifPrev").addComponent
-        (
-            //add click action listener
-            new OnPointerDown
-            (
-                (e) =>
-                {
-                    //select prev difficulty
-                    this.setDifficulty(GameState.DifficultyCur-1);
-
-                    if(GameState.debuggingManager) { log("game manager decreasing difficulty: "+DifficultyData[GameState.DifficultyCur].DisplayName); }
-                },
-                {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] Decrease Difficulty",
-                    distance: 32
-                }
-            )
-        );
-        //  action button - play
-        //      object
-        this.gameMenu3D.AddMenuObject("PlayAction", 2);
-        this.gameMenu3D.AdjustMenuObject("PlayAction", 0, new Vector3(1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("PlayAction", 0, new Vector3(-1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("PlayAction", 1, new Vector3(0.5,0.5,1));
-        //      text
-        this.gameMenu3D.AddMenuText("PlayAction", "PlayActionText", "PLAY");
-        this.gameMenu3D.AdjustTextDisplay("PlayAction", "PlayActionText", 0, 6);
-        this.gameMenu3D.AdjustTextObject("PlayAction", "PlayActionText", 0, new Vector3(0,0,0));
-        this.gameMenu3D.AdjustTextObject("PlayAction", "PlayActionText", 1, new Vector3(2,2,2));
-        //      click action: play/reset game
-        this.gameMenu3D.GetMenuObject("PlayAction").addComponent
-        (
-            //add click action listener
-            new OnPointerDown
-            (
-                (e) =>
-                {
-                    this.GameStart();
-                },
-                {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] Start Game",
-                    distance: 8
-                }
-            )
-        );
-        //  action button - reset
-        //      object
-        this.gameMenu3D.AddMenuObject("ResetAction", 2);
-        this.gameMenu3D.AdjustMenuObject("ResetAction", 0, new Vector3(1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("ResetAction", 0, new Vector3(1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("ResetAction", 1, new Vector3(0.5,0.5,1));
-        //      text
-        this.gameMenu3D.AddMenuText("ResetAction", "ResetActionText", "RESET");
-        this.gameMenu3D.AdjustTextDisplay("ResetAction", "ResetActionText", 0, 6);
-        this.gameMenu3D.AdjustTextObject("ResetAction", "ResetActionText", 0, new Vector3(0,0,0));
-        this.gameMenu3D.AdjustTextObject("ResetAction", "ResetActionText", 1, new Vector3(2,2,2));
-        //      click action: play/reset game
-        this.gameMenu3D.GetMenuObject("ResetAction").addComponent
-        (
-            //add click action listener
-            new OnPointerDown
-            (
-                (e) =>
-                {
-                    this.GameStart();
-                },
-                {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] Reset Game",
-                    distance: 8
-                }
-            )
-        );
-        //  action button - start wave
-        //      object
-        this.gameMenu3D.AddMenuObject("WaveAction", 2);
-        this.gameMenu3D.AdjustMenuObject("WaveAction", 0, new Vector3(1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("WaveAction", 0, new Vector3(-1.6,2,0));
-        this.gameMenu3D.AdjustMenuObject("WaveAction", 1, new Vector3(0.5,0.5,1));
-        //      text
-        this.gameMenu3D.AddMenuText("WaveAction", "WaveActionText", "START WAVE");
-        this.gameMenu3D.AdjustTextDisplay("WaveAction", "WaveActionText", 0, 4);
-        this.gameMenu3D.AdjustTextObject("WaveAction", "WaveActionText", 0, new Vector3(0,0,0));
-        this.gameMenu3D.AdjustTextObject("WaveAction", "WaveActionText", 1, new Vector3(2,2,2));
-        //      click action: play/reset game
-        this.gameMenu3D.GetMenuObject("WaveAction").addComponent
-        (
-            //add click action listener
-            new OnPointerDown
-            (
-                (e) =>
-                {
-                    this.WaveStart();
-                },
-                {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] Reset Game",
-                    distance: 8
-                }
-            )
-        );
-    }*/
-    callbackSetDifficulty(dif:number)
-    {
-        GameManager.Instance.setDifficulty(dif);
-    }
-    //sets the game's difficulty
-    setDifficulty(dif:number)
-    {
-        //redefine difficulty
-        if(dif >= DifficultyData.length) { GameState.DifficultyCur = 0; }
-        else if(dif < 0) { GameState.DifficultyCur = DifficultyData.length-1; }
-        else { GameState.DifficultyCur = dif; }
-
-        //update text
-        GameMenu2D.Instance.updateDifficulty();
-        //this.gameMenu3D.SetMenuText("Dif", "DifTxt", DifficultyData[GameState.DifficultyCur].DisplayName);
-    }
-
     //game timer
     gameTimerSystem:GameTimerSystem;
-
-    //wave preview
-    //enemyWavePreview:EnemyWaveDisplay;
 
     /**
      * constructor
@@ -264,265 +61,188 @@ export class GameManager extends Entity
         }));
 
         //2D menu callbacks
-        GameMenu2D.Instance.SetDifficulty = this.callbackSetDifficulty;
-        GameMenu2D.Instance.GameStart = this.callbackGameStart;
-        GameMenu2D.Instance.WaveStart = this.callbackWaveStart;
-        GameMenu2D.Instance.TowerBuild = this.callbackTowerBuild;
+        GameMenu.Instance.SetDifficulty = this.callbackSetDifficulty;
+        GameMenu.Instance.GameStart = this.callbackGameStart;
+        GameMenu.Instance.GameReset = this.callbackGameReset;
+        GameMenu.Instance.WaveStart = this.callbackWaveStart;
+        GameMenu.Instance.TowerBuild = this.callbackTowerBuild;
+        GameMenu.Instance.TowerDeconstruct = this.callbackTowerDeconstruct;
 
-        //3D menu
-        /*
-        this.gameMenu3D = new MenuGroup3D();
-        this.menuSetup3D();
-        this.gameMenu3D.AdjustMenuParent(0, new Vector3(24,0,41));
-        this.gameMenu3D.AdjustMenuParent(1, new Vector3(0,0,0));   //hide until restructure
-        */
-
-        //timer
+        //timer system setup
         this.gameTimerSystem = new GameTimerSystem();
         this.gameTimerSystem.SpawnEnemy = this.callbackEnemyUnitSpawn;
         this.gameTimerSystem.StartWave = this.callbackWaveStart;
         engine.addSystem(this.gameTimerSystem);
 
-        //managers
-        //  waypoints
+        //manager component setup
+        //  waypoint manager
         WaypointManager.Instance.GenerateWaypoints();
         WaypointManager.Instance.setParent(this);
-        //  towers
+        //  tower manager
+        TowerManager.Instance.GetSelectedTowerMove = this.getSelectedTowerMove;
+        TowerManager.Instance.MoveTower = this.callbackTowerMove
+        TowerManager.Instance.GetSelectedTower = this.getSelectedTower;
         TowerManager.Instance.SelectTower = this.callbackTowerSelect;
         TowerManager.Instance.DamageEnemy = this.callbackEnemyUnitDamage;
         TowerManager.Instance.GenerateTowerFoundations();
         TowerManager.Instance.setParent(this);
-        //  enemy units
+        //  enemy unit manager
         EnemyUnitManager.Instance.UnitAttack = this.callbackPlayerBaseDamage;
         EnemyUnitManager.Instance.UnitDeath = this.callbackEnemyUnitDeath;
         EnemyUnitManager.Instance.setParent(this);
-
-        //wave preview WIP
-        //this.enemyWavePreview = new EnemyWaveDisplay();
-        //this.enemyWavePreview.setParent(this);
-        //this.enemyWavePreview.getComponent(Transform).position = new Vector3(12, 0, 20);
-
-        //set default difficulty
-        this.setDifficulty(2);
+        EnemyUnitManager.Instance.Initialize();
 
         //add to engine
         engine.addEntity(this);
 
-        //start game by default
-        //  TODO: this should be disabled to stop unneeded pre-warming
-        this.GameStart();
+        //set default difficulty
+        this.SetDifficulty(2);
     }
-
-    /**
-     * sets the game's current state
-     * @param state target game state
-     */
-    private setGameState(state:number)
+    
+    //callback to set difficulty
+    public callbackSetDifficulty(dif:number)
     {
-        //process state change
-        GameState.stateCur = state;
-        switch(GameState.stateCur)
-        {
-            //0 - idle/game not started
-            case 0:
-                //clean map
-                //  enemies
-                EnemyUnitManager.Instance.ClearUnits();
-                //  towers
-                TowerManager.Instance.ClearTowers();
+        GameManager.Instance.SetDifficulty(dif);
+    }
+    //sets the game's difficulty
+    public SetDifficulty(dif:number)
+    {
+        //redefine difficulty
+        if(dif >= DifficultyData.length) { GameState.DifficultyCur = 0; }
+        else if(dif < 0) { GameState.DifficultyCur = DifficultyData.length-1; }
+        else { GameState.DifficultyCur = dif; }
 
-                //arrange buttons
-                //engine.addEntity(this.gameMenu3D.GetMenuObject("PlayAction"));
-                //engine.removeEntity(this.gameMenu3D.GetMenuObject("WaveAction"));
-            break;
-            //1 - active, in between waves
-            case 1:
-                //clean map
-                //  enemies
-                EnemyUnitManager.Instance.ClearUnits();
+        //update text
+        GameMenu.Instance.updateDifficulty();
+    }
+    
+    /**
+     * returns the game to its initialization point, displaying the difficulty menu
+     */
+    public callbackGameReset()
+    {
+        GameManager.Instance.GameReset();
+    }
+    public GameReset()
+    {
+        if(GameState.debuggingManager) log("TD MANAGER: game resetting...");
 
-                //arrange buttons
-                //engine.removeEntity(this.gameMenu3D.GetMenuObject("PlayAction"));
-                //engine.addEntity(this.gameMenu3D.GetMenuObject("WaveAction"));
-            break;
-            //2 - active, wave on-going, spawning on-going
-            case 2:
-                
-            break;
-            //3 - active, wave on-going, spawning completed
-            case 3:
+        //update gamestate
+        GameState.stateCur = 0;
+        //halt wave/spawning
+        this.gameTimerSystem.halted = true;
 
-            break;
-            //4 - game over, win
-            case 4:
-                //halt wave/spawning
-                this.gameTimerSystem.halted = true;
-
-                //remove enemies from map
-                EnemyUnitManager.Instance.ClearUnits();
-                //  towers
-                TowerManager.Instance.ClearTowers();
-            break;
-            //5 - game over, loss
-            case 5:
-                //halt wave/spawning
-                this.gameTimerSystem.halted = true;
-
-                //remove enemies from map
-                EnemyUnitManager.Instance.ClearUnits();
-                //  towers
-                TowerManager.Instance.ClearTowers();
-            break;
-        }
+        //clean map
+        EnemyUnitManager.Instance.ClearUnits();
+        TowerManager.Instance.ClearTowers();
         
-        //update 2D display
-        GameMenu2D.Instance.updateGameState();
-        GameMenu2D.Instance.updateWaveCount();
-        GameMenu2D.Instance.updateUnitCount();
-        GameMenu2D.Instance.updateUnitType();
-
-        //update 3D display
-        //this.gameMenu3D.SetMenuText("Title", "StateTxt", GameState.stateStrings[GameState.stateCur]);
+        //redraw display
+        GameMenu.Instance.UpdateMainMenuState(0);
+        GameMenu.Instance.UpdateWaveCount();
+        GameMenu.Instance.updateLifeCount();
+        GameMenu.Instance.updateMoneyCount();
+        
+        //play music: lobby
+        AudioManager.Instance.SetMusicState(1);
+        
+        if(GameState.debuggingManager) log("TD MANAGER: game reset!");
     }
 
     /**
      * starts the game, initializing all systems and setting the game stage to a neutral state.
-     *  many of the game's systems are initialized here during the first load to reduce 
-     * initial scene loading time.
      */
     public callbackGameStart()
     {
         GameManager.Instance.GameStart();
     }
-    GameStart()
+    public GameStart()
     {
-        //reset game state
+        if(GameState.debuggingManager) log("TD MANAGER: game starting...");
+
+        //update gamestate
+        GameState.stateCur = 1;
+
+        //clean map
+        //set default game state
         GameState.WaveCur = 0;
         GameState.PlayerHealth = DifficultyData[GameState.DifficultyCur].PlayerHealth;
         GameState.PlayerMoney = GameState.moneyStart;
 
         //reset managers
+        //  spawners
+        WaypointManager.Instance.ResetSpawner();
+        WaypointManager.Instance.ParseSpawnerConfig();
         //  units
-        EnemyUnitManager.Instance.Initialize();
+        EnemyUnitManager.Instance.ClearUnits();
         //  waves
         EnemyWaveManager.Instance.GenerateWaves();
         //  towers
         TowerManager.Instance.ClearTowers();
 
+        //redraw display
+        GameMenu.Instance.UpdateMainMenuState(1);
+        GameMenu.Instance.UpdateWaveCount();
+        GameMenu.Instance.updateLifeCount();
+        GameMenu.Instance.updateMoneyCount();
+
         //reset timer system
         this.gameTimerSystem.Initialize();
-
-        //reset HUD
-        GameMenu2D.Instance.updateLifeCount();
-        GameMenu2D.Instance.updateWaveCount();
-        GameMenu2D.Instance.updateUnitCount();
-        GameMenu2D.Instance.updateMoneyCount();
-
-        //set game state to active
-        this.setGameState(1);
         
-        if(GameState.debuggingManager) { log("new game started!"); }
-    }
-
-    /**
-     * called when player interacts with a tower foundation object, opens the interaction
-     * menu for the given tower foundation allowing user to de/construct/upgrade tower.
-     * @param index tower targeted for interaction
-     */
-    selectedFoundation:undefined|TowerFoundation;
-    public callbackTowerSelect(index:number)
-    {
-        GameManager.Instance.TowerSelect(index);
-    }
-    public TowerSelect(index:number) 
-    {
-        //attempt to get targeted foundation
-        this.selectedFoundation = TowerManager.Instance.TowerFoundationDict.getItem(index.toString());
-        if(this.selectedFoundation == undefined)
-        {
-            log("ERROR: attempting to select non-existant tower foundation (index = "+index.toString()+")");
-            return;
-        }
-
-        //position menu to selected foundation
-        //  initial position
-        GameMenu2D.Instance.menuGroupTower.AdjustMenuParent(0, this.selectedFoundation.getComponent(Transform).position);
-        //  rotation
-        GameMenu2D.Instance.menuGroupTower.groupParent.getComponent(Transform).lookAt(Camera.instance.position);
-        GameMenu2D.Instance.menuGroupTower.groupParent.getComponent(Transform).rotation = 
-            Quaternion.Euler
-            (
-                0,
-                GameMenu2D.Instance.menuGroupTower.groupParent.getComponent(Transform).eulerAngles.y + 180,
-                0
-            );
-
-        //update menu display for tower foundation
-        GameMenu2D.Instance.DisplayTowerFoundation(this.selectedFoundation);
-    }
-
-    /**
-     * builds the currently selected tower def on the currently selected foundation.
-     */
-    public callbackTowerBuild()
-    {
-        GameManager.Instance.TowerBuild();
-    }
-    public TowerBuild()
-    {
-        //ensure foundation is selected
-        if(this.selectedFoundation == undefined)
-        {
-            if(GameState.debuggingTower) { log("ERROR: tower build failed, no tower foundation selected"); }
-            return;
-        }
-        //check player's money balance
-        if(GameState.PlayerMoney < dataTowers[GameMenu2D.Instance.towerDefinitionIndex].ValueCost && !GameState.debuggingTower)
-        {
-            if(GameState.debuggingTower) { log("ERROR: tower build failed, not enough player funding"); }
-            return;
-        }
+        //play music: lobby
+        AudioManager.Instance.SetMusicState(1);
         
-        if(GameState.debuggingTower) { log("building tower "+GameMenu2D.Instance.towerDefinitionIndex.toString()+" on foundation "+this.selectedFoundation.Index.toString()); }
-
-        //remove funding
-        GameState.PlayerMoney -= dataTowers[GameMenu2D.Instance.towerDefinitionIndex].ValueCost;
-        GameMenu2D.Instance.updateMoneyCount();
-
-        //construct tower
-        TowerManager.Instance.BuildTower(this.selectedFoundation.Index, GameMenu2D.Instance.towerDefinitionIndex);
-
-        //update menu display for tower foundation
-        GameMenu2D.Instance.DisplayTowerFoundation(this.selectedFoundation);
+        if(GameState.debuggingManager) log("TD MANAGER: game started!");
     }
 
     /**
-     * removes the tower from the currently selected foundation
+     * ends the game, display game stats and removing enemies (keeps towers to view stats)
+     * @param isVictory whether the game ends in a win or a loss
      */
-    public TowerDeconstruct()
+    public callbackGameEnd(isVictory:boolean)
     {
+        GameManager.Instance.GameEnd(isVictory);
+    }
+    public GameEnd(isVictory:boolean)
+    {
+        if(GameState.debuggingManager) log("TD MANAGER: game ending ("+isVictory+")...");
+        //update gamestate
+        GameState.stateCur = 3;
+        
+        //remove selected move foundation
+        this.selectedFoundationMove = undefined;
+        TowerManager.Instance.SetTowerMoveMarkerState(false);
 
+        //clear units
+        EnemyUnitManager.Instance.ClearUnits();
+
+        //play music: lobby
+        AudioManager.Instance.SetMusicState(1);
+        
+        if(GameState.debuggingManager) log("TD MANAGER: game ended ("+isVictory+")!");
     }
 
     /**
      * begins the next wave, spawning all enemies in current wave per interval 
      */
-    callbackWaveStart()
+    public callbackWaveStart()
     {
         GameManager.Instance.WaveStart();
     }
-    WaveStart()
+    public WaveStart()
     {
-        if(GameState.debuggingManager) log("starting wave "+GameState.WaveCur+"...");
+        if(GameState.debuggingWave) log("TD MANAGER: starting wave "+GameState.WaveCur+"...");
         //ensure game is between waves
-        if(GameState.stateCur != 1 && GameState.stateCur != 3)
+        if(GameState.stateCur != 1)
         {
-            if(GameState.debuggingManager) log("failed: incorrect state ("+GameState.stateCur.toString()+")");
+            if(GameState.debuggingWave) log("TD MANAGER: failed, incorrect state ("+GameState.stateCur.toString()+")");
             return;
         }
-
-        //set game state to active
-        this.setGameState(2);
+        //update gamestate
+        GameState.stateCur = 2;
+        
+        //remove selected move foundation
+        this.selectedFoundationMove = undefined;
+        TowerManager.Instance.SetTowerMoveMarkerState(false);
 
         //get rooster length
         this.unitLength = EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits.length;
@@ -537,7 +257,14 @@ export class GameManager extends Entity
         //prime timer system
         this.gameTimerSystem.Initialize();
         this.gameTimerSystem.halted = false;
-        if(GameState.debuggingManager) log("started wave "+GameState.WaveCur+" with "+EnemyUnitManager.Instance.enemySizeRemaining+" enemies!");
+
+        //redraw display
+        GameMenu.Instance.UpdateMainMenuState(2);
+
+        //play music: battle
+        AudioManager.Instance.SetMusicState(2);
+        
+        if(GameState.debuggingWave) log("TD MANAGER: started wave "+GameState.WaveCur+" with "+EnemyUnitManager.Instance.enemySizeRemaining+" enemies!");
     }
 
     /**
@@ -545,23 +272,238 @@ export class GameManager extends Entity
      */
     WaveEnd()
     {
-        if(GameState.debuggingManager) log("ending wave "+GameState.WaveCur+"...");
+        if(GameState.debuggingWave) log("TD MANAGER: wave "+GameState.WaveCur+" ending...");
         //check if there are waves remaining
         if(GameState.WaveCur >= GameState.WaveMax-1)
         {
-
+            if(GameState.debuggingWave) log("TD MANAGER: game ended on wave "+GameState.WaveCur+"!");
+            this.GameEnd(true);
+            return;
         }
+        //update gamestate
+        GameState.stateCur = 1;
 
         //award bounty to player
         GameState.PlayerMoney += GameState.MoneyRewardWave;
-        GameMenu2D.Instance.updateMoneyCount();
-
-        if(GameState.debuggingManager) log("ended wave "+GameState.WaveCur+"!");
+        GameMenu.Instance.updateMoneyCount();
 
         //push next wave
         GameState.WaveCur++;
 
-        this.setGameState(1);
+        //check waypoint actions
+        WaypointManager.Instance.ParseSpawnerConfig();
+
+        //redraw display
+        GameMenu.Instance.UpdateMainMenuState(1);
+
+        //play music: lobby
+        AudioManager.Instance.SetMusicState(1);
+
+        if(GameState.debuggingWave) log("TD MANAGER: wave "+GameState.WaveCur+" ended!");
+    }
+
+    //currently selected tower foundation
+    selectedFoundationMove:undefined|TowerFoundation;
+    public getSelectedTowerMove():undefined|TowerFoundation
+    {
+        return GameManager.Instance.selectedFoundationMove;
+    }
+
+    /**
+     * called when player interacts with a tower foundation object to move tower,
+     *  first selection -> sets foundation for swap
+     *  second selection -> swap towers between foundations
+     */
+    public callbackTowerMove(index:number)
+    {
+        GameManager.Instance.TowerMove(index);
+    }
+    public TowerMove(index:number)
+    {
+        if(GameState.debuggingTower) log("TD MANAGER: foundation "+index.toString()+" selected for move");
+
+        //hide edit menu
+        GameMenu.Instance.SetTowerMenuState(false);
+
+        //only allow tower moves between waves
+        if(GameState.stateCur != 1)
+        {
+            if(GameState.debuggingTower) log("TD MANAGER (ERROR): tower move failed, wrong game state");
+            return;
+        }
+
+        //if no foundation is selected for swap
+        if(this.selectedFoundationMove == undefined)
+        {
+            if(GameState.debuggingTower) log("TD MANAGER: move foundation was undefined, set to: "+index.toString());
+            //select foundation
+            this.selectedFoundationMove = TowerManager.Instance.TowerFoundationDict.getItem(index.toString());
+            
+            //set tower move marker
+            if(this.selectedFoundationMove != undefined) TowerManager.Instance.SetTowerMoveMarker(index);
+        }
+        //if foundation is selected for swap
+        else
+        {
+            //if targeted foundation is different foundation
+            if(this.selectedFoundationMove.Index != index)
+            {
+                if(GameState.debuggingTower) log("TD MANAGER: move foundation was defined as "+this.selectedFoundationMove.Index.toString()+", swapping with "+index.toString());
+
+                TowerManager.Instance.MoveTowerObject(this.selectedFoundationMove.Index, index);
+            }
+            else
+            {
+                if(GameState.debuggingTower) log("TD MANAGER: move foundation was defined as "+this.selectedFoundationMove.Index.toString()+", selected same foundation (cleared)");
+            }
+        
+            //remove selected move foundation
+            this.selectedFoundationMove = undefined;
+
+            //set tower move marker
+            TowerManager.Instance.SetTowerMoveMarkerState(false);
+        }
+    }
+
+    //currently selected tower foundation
+    selectedFoundation:undefined|TowerFoundation;
+    public getSelectedTower():undefined|TowerFoundation
+    {
+        return GameManager.Instance.selectedFoundation;
+    }
+    /**
+     * called when player interacts with a tower foundation object to edit tower, 
+     * opens interaction menu based on foundation's state:
+     *  if tower does not exist -> tower construction menu
+     *  if tower exists -> tower editing menu
+     * @param index tower targeted for interaction
+     */
+    public callbackTowerSelect(index:number)
+    {
+        GameManager.Instance.TowerSelect(index);
+    }
+    public TowerSelect(index:number) 
+    {
+        if(GameState.debuggingTower) log("TD MANAGER: selecting tower foundation "+index.toString()+"...");
+
+        //only allow tower interactions when game is running
+        if(GameState.stateCur == 0)
+        {
+            if(GameState.debuggingTower) log("TD MANAGER (ERROR): tower move failed, wrong game state");
+            return;
+        }
+
+        //hide swap selection object
+        this.selectedFoundationMove = undefined;
+        TowerManager.Instance.SetTowerMoveMarkerState(false);
+
+        //attempt to get targeted foundation
+        this.selectedFoundation = TowerManager.Instance.TowerFoundationDict.getItem(index.toString());
+        if(this.selectedFoundation == undefined)
+        {
+            if(GameState.debuggingTower) { log("TD MANAGER (ERROR): attempting to select non-existant tower foundation (index = "+index.toString()+")"); }
+            return;
+        }
+
+        //position menu to selected foundation
+        //  initial position
+        GameMenu.Instance.menuGroupTower.AdjustMenuParent(0, this.selectedFoundation.getComponent(Transform).position);
+        //  rotation
+        GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).lookAt(Camera.instance.position);
+        GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).rotation = Quaternion.Euler
+        (
+            0,
+            GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).eulerAngles.y + 180,
+            0
+        );
+
+        //update menu display for tower foundation
+        GameMenu.Instance.DisplayTowerFoundation(this.selectedFoundation);
+
+        if(GameState.debuggingTower) log("TD MANAGER: selected tower foundation "+index.toString()+"!");
+    }
+
+    /**
+     * builds the currently selected tower def on the currently selected foundation.
+     */
+    public callbackTowerBuild()
+    {
+        GameManager.Instance.TowerBuild();
+    }
+    public TowerBuild()
+    {
+        //only allow tower interactions when game is running
+        if(GameState.stateCur == 0 || GameState.stateCur == 3)
+        {
+            if(GameState.debuggingTower) log("TD MANAGER (ERROR): tower build failed, wrong game state");
+            return;
+        }
+        //ensure foundation is selected
+        if(this.selectedFoundation == undefined)
+        {
+            if(GameState.debuggingTower) { log("TD MANAGER (ERROR): tower build failed, no tower foundation selected"); }
+            return;
+        }
+        //check player's money balance
+        if(GameState.PlayerMoney < dataTowers[GameMenu.Instance.towerDefinitionIndex].ValueCost && !GameState.debuggingTower)
+        {
+            if(GameState.debuggingTower) { log("TD MANAGER (ERROR): tower build failed, not enough player funding"); }
+            return;
+        }
+        
+        if(GameState.debuggingTower) { log("TD MANAGER: constructing tower (type="+GameMenu.Instance.towerDefinitionIndex.toString()+") on foundation (index="
+            +this.selectedFoundation.Index.toString()+")..."); }
+
+        //remove funding
+        GameState.PlayerMoney -= dataTowers[GameMenu.Instance.towerDefinitionIndex].ValueCost;
+        GameMenu.Instance.updateMoneyCount();
+
+        //construct tower
+        TowerManager.Instance.BuildTower(this.selectedFoundation.Index, GameMenu.Instance.towerDefinitionIndex);
+
+        //update menu display for tower foundation
+        GameMenu.Instance.DisplayTowerFoundation(this.selectedFoundation);
+
+        if(GameState.debuggingTower) { log("TD MANAGER: constructed tower frame (type="+this.selectedFoundation.TowerFrame.TowerDef.toString()
+            +") foundation (index="+this.selectedFoundation.Index.toString()+")!"); }
+    }
+
+    /**
+     * removes the tower from the currently selected foundation
+     */
+    public callbackTowerDeconstruct()
+    {
+        GameManager.Instance.TowerDeconstruct();
+    }
+    public TowerDeconstruct()
+    {
+        //only allow tower interactions when game is running
+        if(GameState.stateCur == 0 || GameState.stateCur == 3)
+        {
+            if(GameState.debuggingTower) log("TD MANAGER (ERROR): tower deconstruct failed, wrong game state");
+            return;
+        }
+        //ensure foundation is selected
+        if(this.selectedFoundation == undefined)
+        {
+            if(GameState.debuggingTower) { log("TD MANAGER (ERROR): tower deconstruct failed, no tower foundation selected"); }
+            return;
+        }
+        //ensure frame is selected
+        if(this.selectedFoundation.TowerFrame.TowerDef == -1)
+        {
+            if(GameState.debuggingTower) { log("TD MANAGER (ERROR): tower deconstruct failed, no tower frame selected"); }
+            return;
+        }
+        if(GameState.debuggingTower) { log("TD MANAGER: deconstructing tower on foundation (index=" +this.selectedFoundation.Index.toString()+")..."); }
+
+        //refund tower
+        TowerManager.Instance.ClearTower(this.selectedFoundation.Index, true); 
+        
+        //redraw display
+        GameMenu.Instance.DisplayTowerFoundation(this.selectedFoundation);
+        
+        if(GameState.debuggingTower) { log("TD MANAGER: deconstructed tower on foundation (index=" +this.selectedFoundation.Index.toString()+")!"); }
     }
 
     /**
@@ -577,11 +519,14 @@ export class GameManager extends Entity
     }
     public EnemyUnitSpawn()
     {
-        if(GameState.debuggingEnemy) log("Game Manager: spawning enemy unit...");
+        if(GameState.debuggingEnemy) log("TD MANAGER: spawning enemy unit...");
 
         //attempt to spawn an enemy for each spawn point
         for(var k:number = 0; k<WaypointManager.Instance.SpawnPoints.size(); k++)
         {
+            //check waypoint
+            if(WaypointManager.Instance.SpawnPoints.getItem(k).State != 1) continue;
+
             //get type of next unit, ensuring randomly selected unit has a count available
             this.unitLength = EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits.length;
             this.unitIndexTest = Math.floor(Math.random()*this.unitLength);
@@ -618,14 +563,12 @@ export class GameManager extends Entity
                     this.gameTimerSystem.waveWaiting = true;
                 }
 
-                log("ERROR: attempting to create enemy unit for an empty wave");
+                log("TD MANAGER (ERROR): attempted to create enemy unit for an empty wave");
                 return;
             } 
 
             //attempt to assign unit
-            //NOTE: sometimes this value can be over-written to test multi-waves
-            var unitObj = EnemyUnitManager.Instance.AssignEnemyUnit(0);
-            var unitObj = EnemyUnitManager.Instance.AssignEnemyUnit(EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[this.unitIndex].enemyIndex);
+            var unitObj = EnemyUnitManager.Instance.AssignEnemyUnit(EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[this.unitIndex].enemyIndex, k);
             
             //check if unit was available for assignment
             if(unitObj != undefined)
@@ -649,14 +592,14 @@ export class GameManager extends Entity
                 }
 
                 //update hud
-                GameMenu2D.Instance.updateUnitCount();
+                GameMenu.Instance.UpdateEnemyCount();
 
-                if(GameState.debuggingEnemy) log("spawned enemy unit, ID:"+unitObj.Index.toString());
+                if(GameState.debuggingEnemy) log("TD MANAGER: spawned enemy unit, ID:"+unitObj.Index.toString());
             }
             else
             {
 
-                if(GameState.debuggingEnemy) log("failed to spawn enemy unit, all units are reserved");
+                if(GameState.debuggingEnemy) log("TD MANAGER: failed to spawn enemy unit, all units are reserved");
                 return;
             }
         }
@@ -695,20 +638,20 @@ export class GameManager extends Entity
         //ensure unit exists
         if(this.enemyUnit == undefined)
         { 
-            if(GameState.debuggingEnemy) log("GM ERROR: attempting to kill nonexistant enemy="+index.toString()); 
+            if(GameState.debuggingEnemy) log("TD MANAGER (ERROR): attempting to kill nonexistant enemy="+index.toString()); 
             return;
         }
         //ensure unit is alive
         if(!this.enemyUnit.IsAlive)
         { 
-            if(GameState.debuggingEnemy) log("GM ERROR: attempting to kill dead enemy="+index.toString()); 
+            if(GameState.debuggingEnemy) log("TD MANAGER (ERROR): attempting to kill dead enemy="+index.toString()); 
             return;
         }
-        if(GameState.debuggingEnemy) log("Enemy Unit "+index.toString()+" has been killed, processing EnemyUnitDeath"); 
+        if(GameState.debuggingEnemy) log("TD MANAGER: enemy unit "+index.toString()+" has been killed, processing EnemyUnitDeath"); 
 
         //award bounty to player
         GameState.PlayerMoney += EnemyData[this.enemyUnit.Type].ValueRewards;
-        GameMenu2D.Instance.updateMoneyCount();
+        GameMenu.Instance.updateMoneyCount();
 
         //send death update to all towers
         TowerManager.Instance.TargetDeathCheck(index);
@@ -718,7 +661,7 @@ export class GameManager extends Entity
         EnemyUnitManager.Instance.enemySizeRemaining--;
         
         //update hud
-        GameMenu2D.Instance.updateUnitCount();
+        GameMenu.Instance.UpdateEnemyCount();
 
         //check for wave end
         if(EnemyUnitManager.Instance.enemySizeRemaining <= 0)
@@ -736,7 +679,7 @@ export class GameManager extends Entity
     }
     public PlayerBaseDamage()
     {
-        if(GameState.debuggingManager) log("player base damaged");
+        if(GameState.debuggingManager) log("TD MANAGER: player base damaged");
 
         //deal damage
         GameState.PlayerHealth--;
@@ -744,15 +687,17 @@ export class GameManager extends Entity
         //check if player's base is destroyed
         if(GameState.PlayerHealth <= 0)
         {
-            if(GameState.debuggingManager) log("player base has been destroyed, ending game...");
-            this.setGameState(5);
+            if(GameState.debuggingManager) log("TD MANAGER: player base has been destroyed, ending game...");
+            this.GameEnd(false);
         }
-        GameMenu2D.Instance.updateLifeCount();
+        GameMenu.Instance.updateLifeCount();
     }
 }
 //game timers used for delaying waves and spawns
 class GameTimerSystem implements ISystem
 {
+    //if true automatically begins the next wave after countdown
+    autoStart:boolean = false;
     //if true, waits for player interaction before starting a wave
     //  every 10 waves the player is provided with one of these periods to build up
     halted:boolean;
@@ -834,7 +779,7 @@ class GameTimerSystem implements ISystem
                 }
             }
             //if wave is waiting to start
-            if(this.waveWaiting)
+            if(this.waveWaiting && this.autoStart)
             {
                 //check wave timer
                 this.delayWaveTimeStamp -= dt;

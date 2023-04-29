@@ -1,55 +1,143 @@
 /*      TOWER ENTITY
-    holds definitions for all tower components. towers are
-    composed of 3 objects and 1 system:
-        -tower foundation: acts as the interaction point for towers
-        allowing players to build/upgrade/deconstruct towers
-        -tower gimbal: positioning object used for look-at rotations
-        -tower frame: flavour object containing primary visuals and
-        animations for towers
+    holds functional components for all tower pieces. towers are
+    composed of 4 objects and 1 system:
+        -tower foundation object: interaction point for building and moving towers
+        -tower structure object: combat structure that attacks enemy units
+        -tower gimbal object: positioning object used for look-at rotations
         -tower timer system: contains logic for targeting and attacking
         enemy units that come within range of the tower
-
 */
 
 import { List } from "src/utilities/collections";
-import { configTower } from "./config/tower-config";
+import { settingTower } from "./config/tower-config";
 import { dataTowers } from "./data/tower-data";
 import { EnemyUnitObject } from "./enemy-entity";
 import { TriggerComponent, TriggerSphereShape } from "@dcl/ecs-scene-utils";
 import { EnemyUnitManager } from "./enemy-manager";
 import { GameState } from "./game-states";
 
-//provides the player with an interactable object used to build,
-//upgrade, and deconstruct towers. these are generated at scene load
-//and cleared at the start of each game 
+/**
+ * provides the player with an interactable object used to build tower frames.
+ * interacting with a foundation that has a tower frame already constructed on it will
+ * allow the player to manage that tower frame and move the frame to a different unoccupied foundation 
+ */ 
 export class TowerFoundation extends Entity
 {
     //access index
     private index:number;
     get Index():number { return this.index; };
 
-    //build info
-    private towerObjGimbal:Entity;
-    private towerObjFrame:Entity;
-    //  current tower def
-    TowerDef:number = -1;
-    //  current upgrades
-    TowerUpgrades:number[] = [];
+    //tower frame (functional data object) 
+    public TowerFrame:TowerFrame;
+
+    //callbacks
+    public getSelectedTower:() => undefined|TowerFoundation;
+    public getTowerShape:(type:number, index:number) => GLTFShape;
+    //public getTowerMaterial:(type:number, index:number) => Material;
 
     //targeting
     //  collider (this could be optimized by denoting a single trigger for each tower def)
-    TriggerShape:TriggerSphereShape;
+    private triggerShape:TriggerSphereShape;
     //  on-collision component, initialized in manager due to instancing reliances
-    TriggerComponent:undefined|TriggerComponent;
+    private triggerComponent:TriggerComponent;
+
+    /**
+     * constructor
+     * @param ind unique index of this tower foundation
+     * @param shapeFoundation object shape used to display foundation base
+     * @param shapeGimbal object shape used to display foundation gimbal/rotational point for tower
+     * @param shapeRange object shape used to display tower's range (should be transparent)
+     * @param enemyEnter callback function called when an enemy unit enters the tower's radius
+     * @param enemyExit callback function called when an enemy unit exits the tower's radius
+     */
+    constructor(index:number, getSelectedTower:() => undefined|TowerFoundation, getTowerShape:(type:number, index:number)=>GLTFShape,
+        enemyEnter:(towerIndex:number, enemyIndex:number)=>void,
+        enemyExit:(towerIndex:number, enemyIndex:number)=>void
+    )
+    {
+        super();
+
+        //data
+        this.index = index;
+
+        //set callback
+        this.getSelectedTower = getSelectedTower;
+        this.getTowerShape = getTowerShape;
+        //this.getTowerMaterial = getTowerMaterial;
+
+        //create foundation object
+        this.addComponent(this.getTowerShape(0, 0));
+        //this.addComponent(this.getTowerMaterial(0, 0));
+        this.addComponent(new Transform
+        ({
+            position: new Vector3 (0, 0, 0),
+            scale: new Vector3 (0, 0, 0),
+            rotation: new Quaternion().setEuler(0, 0, 0)
+        }));
+
+        //trigger shape
+        this.triggerShape = new TriggerSphereShape();
+        this.triggerComponent = this.addComponent(
+            new TriggerComponent(
+                this.triggerShape,
+                {
+                    //targeted layer: enemy
+                    triggeredByLayer: 2,
+                    //calls
+                    onTriggerEnter(entity) 
+                    {
+                        if(GameState.debuggingTower) log("TOWER FOUNDATION: enemy entity:"+(entity as EnemyUnitObject).Index+" entered foundation trigger, ID:"+index.toString());
+                        enemyEnter(index, (entity as EnemyUnitObject).Index);
+                    },
+                    onTriggerExit(entity) 
+                    {
+                        if(GameState.debuggingTower) log("TOWER FOUNDATION: enemy entity:"+(entity as EnemyUnitObject).Index+" exited foundation trigger, ID:"+index.toString());
+                        enemyExit(index, (entity as EnemyUnitObject).Index);
+                    },
+                }
+            )
+        );
+
+        //prepare tower frame entity
+        this.TowerFrame = new TowerFrame(this.triggerShape, getSelectedTower, getTowerShape);
+        this.SetTowerFrame(this.TowerFrame);
+    }
+
+    public SetTowerFrame(towerFrame:TowerFrame)
+    {
+        this.TowerFrame = towerFrame;
+        this.TowerFrame.setParent(this);
+        this.TowerFrame.SetTriggerShape(this.triggerShape);
+        this.TowerFrame.TowerSystem.TowerAnchorTransform = this.getComponent(Transform);
+    }
+}
+
+/** 
+ * represents the functional components of a constructed tower (linkage to definition, colliders for
+ * catching enemy's entering radiud, etc). this has been split apart to allow towers to be moved between
+ * foundations during game run-time
+*/
+export class TowerFrame extends Entity
+{
+    //current tower def
+    TowerDef:number = -1;
+
+    //current upgrades
+    TowerUpgrades:number[] = [];
+
+    //display objects
+    private towerObjStructure:Entity;
+    private towerObjGimbal:Entity;
+    private towerObjFrame:Entity;
 
     //range indicator
-    TowerRangeIndicator:Entity;
+    private rangeIndicator:Entity;
     /**
      * toggles range indicator visibility
      */
     public ToggleRangeIndicator()
     {
-        if(this.TowerRangeIndicator.isAddedToEngine())
+        if(this.rangeIndicator.isAddedToEngine())
         {
             this.SetRangeIndicator(false);
         }
@@ -64,76 +152,98 @@ export class TowerFoundation extends Entity
      */
     public SetRangeIndicator(state:boolean)
     {
-        if(state) { if(!this.TowerRangeIndicator.isAddedToEngine()) engine.addEntity(this.TowerRangeIndicator); }
-        else { if(this.TowerRangeIndicator.isAddedToEngine()) engine.removeEntity(this.TowerRangeIndicator); }
+        if(state) { if(!this.rangeIndicator.isAddedToEngine()) engine.addEntity(this.rangeIndicator); }
+        else { if(this.rangeIndicator.isAddedToEngine()) engine.removeEntity(this.rangeIndicator); }
     }
 
     //real-time system
-    TowerSystem:TowerFoundationSystem;
+    TowerSystem:TowerStructureSystem;
+    //trigger object for enemy collisions
+    private triggerShape:TriggerSphereShape;
+    public SetTriggerShape(triggerShape:TriggerSphereShape)
+    {
+        //zero out previous trigger size
+        this.triggerShape.radius = 0;
+        //set up new trigger shape
+        if(this.TowerDef != -1)
+        {
+            this.triggerShape = triggerShape;
+            this.triggerShape.radius = dataTowers[this.TowerDef].ValueAttackRange;
+        }
+    }
+    
+    //callbacks
+    public getSelectedTower:() => undefined|TowerFoundation;
+    public getTowerShape:(type:number, index:number) => GLTFShape;
+    //public getTowerMaterial:(type:number, index:number) => Material;
 
-    /**
-     * constructor
-     * @param ind unique index of this tower foundation
-     * @param shapeFoundation object shape used to display foundation base
-     * @param shapeGimbal object shape used to display foundation gimbal/rotational point for tower
-     * @param shapeRange object shape used to display tower's range (should be transparent)
-     * @param enemyEnter callback function called when an enemy unit enters the tower's radius
-     * @param enemyExit callback function called when an enemy unit exits the tower's radius
-     */
-    constructor(ind:number, shapeFoundation:GLTFShape, shapeGimbal:GLTFShape, shapeRange:GLTFShape, enemyEnter:(towerIndex:number, enemyIndex:number)=>void, enemyExit:(towerIndex:number, enemyIndex:number)=>void)
+    //constructor
+    constructor(triggerShape:TriggerSphereShape, getSelectedTower:() => undefined|TowerFoundation, getTowerShape:(type:number, index:number)=>GLTFShape)
     {
         super();
 
-        //data
-        this.index = ind;
+        //set callback
+        this.getSelectedTower = getSelectedTower;
+        this.getTowerShape = getTowerShape;
+        //this.getTowerMaterial = getTowerMaterial;
+        
+        this.triggerShape = triggerShape;
 
-        //object
-        this.addComponent(shapeFoundation);
+        //set position
         this.addComponent(new Transform
         ({
-            position: new Vector3(configTower[this.Index].Position[0], configTower[this.Index].Position[1], configTower[this.Index].Position[2]),
-            scale: new Vector3(1,1,1),
-            rotation: new Quaternion().setEuler(configTower[this.Index].Rotation[0], configTower[this.Index].Rotation[1], configTower[this.Index].Rotation[2])
+            position: new Vector3 (0, 0, 0),
+            scale: new Vector3 (1, 1, 1),
+            rotation: new Quaternion().setEuler(0, 0, 0)
         }));
 
-        //trigger shape
-        this.TriggerShape = new TriggerSphereShape();
-        //component
-        const index:number = this.Index;
-        this.TriggerComponent = this.addComponent(
-            new TriggerComponent(
-                this.TriggerShape,
-                {
-                    //targeted layer: enemy
-                    triggeredByLayer: 2,
-                    //calls
-                    onTriggerEnter(entity) 
-                    {
-                        if(GameState.debuggingTower) log("Tower Foundation: enemy entity:"+(entity as EnemyUnitObject).Index+" entered foundation trigger, ID:"+index.toString());
-                        enemyEnter(index, (entity as EnemyUnitObject).Index);
-                        //TowerManager.INSTANCE.TowerRangeEnemyEnter((entity as EnemyUnitObject).index, index);
-                    },
-                    onTriggerExit(entity) 
-                    {
-                        if(GameState.debuggingTower) log("Tower Foundation: enemy entity:"+(entity as EnemyUnitObject).Index+" exited foundation trigger, ID:"+index.toString());
-                        enemyExit(index, (entity as EnemyUnitObject).Index);
-                        //TowerManager.INSTANCE.TowerRangeEnemyExit((entity as EnemyUnitObject).index, index);
-                    },
-                }
-            )
-        );   
-
         //generate tower objects
-        //  gimbal
+        //  structure object
+        this.towerObjStructure = new Entity();
+        this.towerObjStructure.addComponent(this.getTowerShape(0, 1));
+        //towerObjStructure.addComponent(this.getTowerMaterial(0, 0));
+        this.towerObjStructure.addComponent(new Transform
+        ({
+            position: new Vector3
+            (
+                settingTower[0].structureOffset[0],
+                settingTower[0].structureOffset[1],
+                settingTower[0].structureOffset[2]
+            ),
+            scale: new Vector3
+            (
+                settingTower[0].structureScale[0],
+                settingTower[0].structureScale[1],
+                settingTower[0].structureScale[2]
+            ),
+            rotation: new Quaternion().setEuler(0,0,0)
+        }));
+        this.towerObjStructure.setParent(this);
+        engine.removeEntity(this.towerObjStructure);
+
+        //  gimbal object
         this.towerObjGimbal = new Entity();
-        this.towerObjGimbal.addComponent(shapeGimbal);
+        this.towerObjGimbal.addComponent(this.getTowerShape(0, 2));
+        //this.towerObjGimbal.addComponent(this.getTowerMaterial(0, 0));
         this.towerObjGimbal.addComponent(new Transform
         ({
-            position: new Vector3(0,0.4,0),
-            scale: new Vector3(1,1,1),
+            position: new Vector3
+            (
+                settingTower[0].gimbalOffset[0],
+                settingTower[0].gimbalOffset[1],
+                settingTower[0].gimbalOffset[2]
+            ),
+            scale: new Vector3
+            (
+                settingTower[0].gimbalScale[0],
+                settingTower[0].gimbalScale[1],
+                settingTower[0].gimbalScale[2]
+            ),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
         this.towerObjGimbal.setParent(this);
+        engine.removeEntity(this.towerObjGimbal);
+
         //  frame
         this.towerObjFrame = new Entity();
         this.towerObjFrame.addComponent(new Transform
@@ -143,19 +253,22 @@ export class TowerFoundation extends Entity
             rotation: new Quaternion().setEuler(0,0,0)
         }));
         this.towerObjFrame.setParent(this.towerObjGimbal);
+        engine.removeEntity(this.towerObjFrame);
+
         //  range indicator
-        this.TowerRangeIndicator = new Entity();
-        this.TowerRangeIndicator.addComponent(shapeRange);
-        this.TowerRangeIndicator.addComponent(new Transform
+        this.rangeIndicator = new Entity();
+        this.rangeIndicator.addComponent(this.getTowerShape(0, 3));
+        //this.rangeIndicator.addComponent(this.getTowerMaterial(0, 0));
+        this.rangeIndicator.addComponent(new Transform
         ({
             position: new Vector3(0,0.1,0),
             scale: new Vector3(0,0,0),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
-        this.TowerRangeIndicator.setParent(this);
+        this.rangeIndicator.setParent(this);
 
         //system
-        this.TowerSystem = new TowerFoundationSystem(this.getComponent(Transform), this.towerObjGimbal, this.towerObjFrame);
+        this.TowerSystem = new TowerStructureSystem(this.getComponent(Transform), this.towerObjGimbal.getComponent(Transform), this.towerObjFrame);
     }
 
     /**
@@ -163,28 +276,44 @@ export class TowerFoundation extends Entity
      */
     public Initialize()
     {
-        //hide tower objects (if any)
-        //  frame shape
-        if(this.towerObjFrame.hasComponent(GLTFShape))
-        {
-            this.towerObjFrame.removeComponent(GLTFShape);
-        }
+        //hide tower objects
+        this.SetDisplayState(false);
 
-        //reset type
+        //reset tower def index
         this.TowerDef = -1;
 
         //ensure system is off
         engine.removeSystem(this.TowerSystem);
 
         //  trigger shape scale (halt unneeded collider capture)
-        this.TriggerShape.radius = 0;
+        this.triggerShape.radius = 0;
         //  indicator
-        this.TowerRangeIndicator.getComponent(Transform).scale = new Vector3(0,0,0);
+        this.rangeIndicator.getComponent(Transform).scale = new Vector3(0,0,0);
         //  target and list
         this.TowerSystem.TowerTarget = undefined;
         while(this.TowerSystem.TowerTargets.size() > 0)
         {
             this.TowerSystem.TowerTargets.removeItem(this.TowerSystem.TowerTargets.getItem(0));
+        }
+    }
+
+    /**
+     * changes display state of frame objects
+     * @param state target state
+     */
+    public SetDisplayState(state:boolean)
+    {
+        if(state)
+        {
+            if(!this.towerObjStructure.isAddedToEngine()) engine.addEntity(this.towerObjStructure);
+            if(!this.towerObjGimbal.isAddedToEngine()) engine.addEntity(this.towerObjGimbal);
+            if(!this.towerObjFrame.isAddedToEngine()) engine.addEntity(this.towerObjFrame);
+        }
+        else
+        {
+            if(this.towerObjStructure.isAddedToEngine()) engine.removeEntity(this.towerObjStructure);
+            if(this.towerObjGimbal.isAddedToEngine()) engine.removeEntity(this.towerObjGimbal);
+            if(this.towerObjFrame.isAddedToEngine()) engine.removeEntity(this.towerObjFrame);
         }
     }
 
@@ -198,6 +327,9 @@ export class TowerFoundation extends Entity
         //set index
         this.TowerDef = index;
 
+        //display frame
+        this.SetDisplayState(true);
+
         //reset upgrades
         this.TowerUpgrades = [];
         while(this.TowerUpgrades.length < dataTowers[this.TowerDef].Upgrades.length)
@@ -205,15 +337,34 @@ export class TowerFoundation extends Entity
             this.TowerUpgrades.push(0);
         }
 
-        //set frame
-        //  shape
+        //clear previous 
+        if(this.towerObjFrame.hasComponent(GLTFShape) != undefined)
+            this.towerObjFrame.removeComponent(GLTFShape);
+
+        //set frame shape and positioning
         this.towerObjFrame.addComponent(shape);
-        this.towerObjFrame.getComponent(Transform).scale = new Vector3(dataTowers[this.TowerDef].Scale[0],dataTowers[this.TowerDef].Scale[1],dataTowers[this.TowerDef].Scale[2]);
+        this.towerObjFrame.getComponent(Transform).position = new Vector3
+        (
+            dataTowers[this.TowerDef].Offset[0],
+            dataTowers[this.TowerDef].Offset[1],
+            dataTowers[this.TowerDef].Offset[2]
+        );
+        this.towerObjFrame.getComponent(Transform).scale = new Vector3
+        (
+            dataTowers[this.TowerDef].Scale[0],
+            dataTowers[this.TowerDef].Scale[1],
+            dataTowers[this.TowerDef].Scale[2]
+        );
         
         //update trigger radius
-        this.TriggerShape.radius = dataTowers[this.TowerDef].ValueAttackRange;
+        this.triggerShape.radius = dataTowers[this.TowerDef].ValueAttackRange;
         //  indicator
-        this.TowerRangeIndicator.getComponent(Transform).scale = new Vector3(dataTowers[this.TowerDef].ValueAttackRange,1,dataTowers[this.TowerDef].ValueAttackRange);
+        this.rangeIndicator.getComponent(Transform).scale = new Vector3
+        (
+            dataTowers[this.TowerDef].ValueAttackRange * 3.5,
+            1,
+            dataTowers[this.TowerDef].ValueAttackRange * 3.5
+        );
         this.SetRangeIndicator(false);
 
         //pull in functional details
@@ -292,7 +443,7 @@ export class TowerFoundation extends Entity
  * handles all real-time processing for the tower, including looking at and damaging enemies
  * TODO: create callback from enemy to tower system upon death to remove target and reset attack if enemy was target
  */
-export class TowerFoundationSystem implements ISystem
+export class TowerStructureSystem implements ISystem
 {
     //active data, derived from def and upgrade levels
     //  attack damage
@@ -310,9 +461,12 @@ export class TowerFoundationSystem implements ISystem
     //  special modifiers (WIP)
     //attackModifiers:number[][];
 
+    TargetingType:number = 0;
+
+    //entity targeted for look-at-enemy rotations
+    TowerAnchorTransform:Transform;
+    TowerGimbalTransform:Transform;
     //objects
-    TowerTransform:Transform;
-    TowerGimbal:Entity;
     TowerFrame:Entity;
 
     //attack
@@ -348,7 +502,7 @@ export class TowerFoundationSystem implements ISystem
      */
     public AddTarget(enemy:number)
     {
-        if(GameState.debuggingTower) log("Tower System: adding target ID:"+enemy.toString());
+        if(GameState.debuggingTower) log("TOWER SYSTEM: adding target ID:"+enemy.toString());
 
         //add enemy index to listing on tower
         this.TowerTargets.addItem(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()));
@@ -356,11 +510,11 @@ export class TowerFoundationSystem implements ISystem
         //if there were no other targets, re-enable system
         if(this.TowerTargets.size() == 1)
         {
-            if(GameState.debuggingTower) log("Tower System: no previous targets existed, reactivating system...");
+            if(GameState.debuggingTower) log("TOWER SYSTEM: no previous targets existed, reactivating system...");
             this.Reset();
             engine.addSystem(this);
         }
-        if(GameState.debuggingTower) log("Tower System: new targeting list size = "+this.TowerTargets.size());
+        if(GameState.debuggingTower) log("TOWER SYSTEM: new targeting list size = "+this.TowerTargets.size());
     }
       
     /**
@@ -373,7 +527,7 @@ export class TowerFoundationSystem implements ISystem
     {
         if(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()).IsAlive)
         {
-            if(GameState.debuggingTower) log("Tower System: removing target ID:"+enemy.toString());
+            if(GameState.debuggingTower) log("TOWER SYSTEM: removing target ID:"+enemy.toString());
 
             //remove enemy index from listing on tower
             this.TowerTargets.removeItem(EnemyUnitManager.Instance.enemyDict.getItem(enemy.toString()));
@@ -384,25 +538,25 @@ export class TowerFoundationSystem implements ISystem
                 //halt any on-going attack
                 this.Reset();
             }
-            if(GameState.debuggingTower) log("Tower System: new targeting list size = "+this.TowerTargets.size());
+            if(GameState.debuggingTower) log("TOWER SYSTEM: new targeting list size = "+this.TowerTargets.size());
         }
     }
 
     //callbacks
     DamageEnemy:(index:number, dam:number, pen:number, rend:number) => void;
-    private damageEnemy(index:number, dam:number, pen:number, rend:number) { log("Tower System: tower callback not set - damage enemy:"+index.toString()); }
+    private damageEnemy(index:number, dam:number, pen:number, rend:number) { log("TOWER SYSTEM: tower callback not set - damage enemy:"+index.toString()); }
 
     //initializes unit upon object creation
     //  takes in index for this unit and starting waypoint
-    constructor(towerTransform:Transform, objGimbal:Entity, objFrame:Entity)
+    constructor(towerAnchor:Transform, towerGimbal:Transform, objFrame:Entity)
     {
         //targets
         this.TowerTarget = undefined;
         this.TowerTargets = new List<EnemyUnitObject>();
         
         //objects
-        this.TowerTransform = towerTransform;
-        this.TowerGimbal = objGimbal;
+        this.TowerAnchorTransform = towerAnchor;
+        this.TowerGimbalTransform = towerGimbal;
         this.TowerFrame = objFrame;
 
         //animations
@@ -429,8 +583,8 @@ export class TowerFoundationSystem implements ISystem
         if(this.TowerTarget != undefined)
         {
             //look at enemy
-            this.TowerGimbal.getComponent(Transform).rotation = 
-                Quaternion.LookRotation(this.TowerTarget.getComponent(Transform).position.subtract(this.TowerTransform.position));
+            this.TowerGimbalTransform.rotation = 
+                Quaternion.LookRotation(this.TowerTarget.getComponent(Transform).position.subtract(this.TowerAnchorTransform.position));
         }
         //if not attacking and off cooldown, attempt to find target and begin attack
         if(!this.isAttacking && this.attackTimer[1] <= 0)
@@ -441,7 +595,7 @@ export class TowerFoundationSystem implements ISystem
             //ensure target has been found
             if(this.TowerTarget != undefined) 
             {
-                if(GameState.debuggingTower) log("Tower System: attack beginning on target");
+                if(GameState.debuggingTower) log("TOWER SYSTEM: attack beginning on target");
                 //attack animation
                 this.SetAnimationState(1);
                 //timing
@@ -468,12 +622,12 @@ export class TowerFoundationSystem implements ISystem
                     this.hasDamaged = true;
                     if(this.TowerTarget != undefined)
                     {
-                        if(GameState.debuggingTower) log("Tower System: attack completed, attack damage "+this.attackDamage.toString()+" dealt to target "+this.TowerTarget.Index.toString());
+                        if(GameState.debuggingTower) log("TOWER SYSTEM: attack completed, attack damage "+this.attackDamage.toString()+" dealt to target "+this.TowerTarget.Index.toString());
                         this.DamageEnemy(this.TowerTarget.Index, this.attackDamage, this.attackPen, this.attackRend);
                     }
                     else
                     {
-                        if(GameState.debuggingTower) log("Tower System: attack completed, no target exists");
+                        if(GameState.debuggingTower) log("TOWER SYSTEM: attack completed, no target exists");
                     }
                 }
             }  
@@ -495,7 +649,7 @@ export class TowerFoundationSystem implements ISystem
     //resets the tower's state to pre-attack defaults
     public Reset()
     {
-        if(GameState.debuggingTower) log("Tower System: tower system has been reset");
+        if(GameState.debuggingTower) log("TOWER SYSTEM: system has been reset");
         this.TowerTarget = undefined;
 
         this.isAttacking = false;
@@ -516,7 +670,7 @@ export class TowerFoundationSystem implements ISystem
         //if enemy is tower's target
         if(this.TowerTarget?.Index == index)
         {
-            if(GameState.debuggingTower) log("Tower System: currently targeted enemy="+index.toString()+" has been killed, reassigning target");
+            if(GameState.debuggingTower) log("TOWER SYSTEM: currently targeted enemy="+index.toString()+" has been killed, reassigning target");
 
             //remove target from list
             this.TowerTargets.removeItem(this.TowerTarget);
@@ -530,12 +684,10 @@ export class TowerFoundationSystem implements ISystem
         }
     }
 
-    //TODO: push additional targeting types back into the main fork after optimizations are completed
-
     //attempts to find target
     public FindTarget()
     {
-        if(GameState.debuggingTower) log("Tower System: attempting to find valid target from targeting list, size = "+this.TowerTargets.size().toString());
+        if(GameState.debuggingTower) log("TOWER SYSTEM: attempting to find valid target from targeting list, size = "+this.TowerTargets.size().toString());
         //purge list of dead enemies
         var i:number = 0;
         var target:EnemyUnitObject;
@@ -557,7 +709,7 @@ export class TowerFoundationSystem implements ISystem
         //if there are no targets, begin idle
         if(this.TowerTargets.size() <= 0)
         {
-            if(GameState.debuggingTower) log("Tower System: no valid enemy target found, removing system from engine");
+            if(GameState.debuggingTower) log("TOWER SYSTEM: no valid enemy target found, removing system from engine");
 
             //reset tower
             this.Reset();
@@ -568,24 +720,162 @@ export class TowerFoundationSystem implements ISystem
         }
 
         //apply sorting technique
-        this.GetTargetDistance();
+        switch(this.TargetingType)
+        {
+            case 0:
+                this.GetTargetDistance();
+                break;
+            case 1:
+                this.GetTargetByHealthValueHighest();
+                break;
+            case 2:
+                this.GetTargetByHealthValueLowest();
+                break;
+            case 3:
+                this.GetTargetByHealthPercentHighest();
+                break;
+            case 4:
+                this.GetTargetByHealthPercentLowest();
+                break;
+            case 5:
+                this.GetTargetByArmourValueHighest();
+                break;
+            case 6:
+                this.GetTargetByArmourValueLowest();
+                break;
+        }
 
-        if(GameState.debuggingTower) log("Tower System: found valid enemy target = "+this.TowerTarget?.Index.toString()+", unit has travelled = "+this.TowerTarget?.unitSystem.distanceTotal.toString());
+        if(GameState.debuggingTower) log("TOWER SYSTEM: found valid enemy target = "+this.TowerTarget?.Index.toString()+", unit has travelled = "+this.TowerTarget?.unitSystem.distanceTotal.toString());
     }
 
-    //finds the enemy who has travelled the furthest distance
+    //all different methods for processing which unit will be targeted by the tower
+    //  there is a fair bit of repetitive code here, but because of how often these functions are processed
+    //  by towers it is well worth the storage-processing trade-off
+    private targetTestUnit:undefined|EnemyUnitObject = undefined;
+    private targetTestValue:number = 0;
+    //  travelled furthest distance down lane
     public GetTargetDistance()
     {
         this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.unitSystem.distanceTotal;
 
         //process every target
         for(var i:number=0; i<this.TowerTargets.size(); i++)
         {
-            //log(this.TowerTarget.unitSystem.distanceTotal+" VS "+this.TowerTargets.getItem(i).unitSystem.distanceTotal)
-            //if there lower indexed target has moved more than this target 
-            if(this.TowerTarget.unitSystem.distanceTotal > this.TowerTargets.getItem(i).unitSystem.distanceTotal)
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue > this.targetTestUnit.unitSystem.distanceTotal)
             {
-                this.TowerTarget = this.TowerTargets.getItem(i);       
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.targetTestUnit.unitSystem.distanceTotal;      
+            }
+        }
+    }
+    //  highest health value
+    public GetTargetByHealthValueHighest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.HealthCur;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue < this.targetTestUnit.HealthCur)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.targetTestUnit.HealthCur;      
+            }
+        }
+    }
+    //  lowest health value
+    public GetTargetByHealthValueLowest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.HealthCur;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue > this.targetTestUnit.HealthCur)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.targetTestUnit.HealthCur;      
+            }
+        }
+    }
+    //  highest health percent
+    public GetTargetByHealthPercentHighest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.HealthCur/this.TowerTarget.HealthMax;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue < this.targetTestUnit.HealthCur/this.targetTestUnit.HealthMax)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.TowerTarget.HealthCur/this.TowerTarget.HealthMax;      
+            }
+        }
+    }
+    //  lowest health percent
+    public GetTargetByHealthPercentLowest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.HealthCur/this.TowerTarget.HealthMax;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue > this.targetTestUnit.HealthCur/this.targetTestUnit.HealthMax)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.TowerTarget.HealthCur/this.TowerTarget.HealthMax;      
+            }
+        }
+    }
+    //  highest armor value
+    public GetTargetByArmourValueHighest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.Armour;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue < this.targetTestUnit.Armour)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.targetTestUnit.Armour;      
+            }
+        }
+    }
+    //  lowest armor value
+    public GetTargetByArmourValueLowest()
+    {
+        this.TowerTarget = this.TowerTargets.getItem(0);
+        this.targetTestValue = this.TowerTarget.Armour;
+
+        //process every target
+        for(var i:number=0; i<this.TowerTargets.size(); i++)
+        {
+            //test value 
+            this.targetTestUnit = this.TowerTargets.getItem(i);
+            if(this.targetTestValue > this.targetTestUnit.Armour)
+            {
+                this.TowerTarget = this.targetTestUnit; 
+                this.targetTestValue = this.targetTestUnit.Armour;      
             }
         }
     }

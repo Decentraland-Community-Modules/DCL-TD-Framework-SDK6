@@ -2,95 +2,41 @@
     defines locations for tower foundations. these are
     locations where towers can be built
 */
+export const settingTower = 
+[
+    {
+        //foundation
+        foundationSpacing: [1, 1],
+        foundationOffset: [0, 0, 0],
+        foundationScale:[0.5, 0.5, 0.5],
+        //structure
+        structureOffset: [0, 0, 0],
+        structureScale: [1, 1, 1],
+        //gimbal
+        gimbalOffset: [0, 0, 0],
+        gimbalScale: [1, 1, 1]
+    }
+]
 export const configTower =
 [
     //top left
     {
-        Position: [9, 0.10, 21],
-        Rotation: [0, 0, 0],
+        GridLocation: [29.5, 0, 36.5],
+        GridSize: [5, 4]
     },
-    {
-        Position: [11, 0.10, 21],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [11, 0.10, 23],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [9, 0.10, 23],
-        Rotation: [0, 0, 0],
-    },
-
-    //top middle
-    {
-        Position: [15, 0.10, 23],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [17, 0.10, 23],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [15, 0.10, 21],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [17, 0.10, 21],
-        Rotation: [0, 0, 0],
-    },
-
     //top right
     {
-        Position: [21, 0.10, 23],
-        Rotation: [0, 0, 0],
+        GridLocation: [36.5, 0, 36.5],
+        GridSize: [4, 4]
     },
+    //center middle
     {
-        Position: [23, 0.10, 23],
-        Rotation: [0, 0, 0],
+        GridLocation: [30.5, 0, 30.5],
+        GridSize: [10, 4]
     },
+    //bottom middle
     {
-        Position: [21, 0.10, 21],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [23, 0.10, 21],
-        Rotation: [0, 0, 0],
-    },
-
-    //middle right
-    {
-        Position: [21, 0.10, 17],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [23, 0.10, 17],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [21, 0.10, 15],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [23, 0.10, 15],
-        Rotation: [0, 0, 0],
-    },
-
-    //lower right
-    {
-        Position: [21, 0.10, 11],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [23, 0.10, 11],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [21, 0.10, 9],
-        Rotation: [0, 0, 0],
-    },
-    {
-        Position: [23, 0.10, 9],
-        Rotation: [0, 0, 0],
-    },
+        GridLocation: [30.5, 0, 24.5],
+        GridSize: [10, 4]
+    }
 ]

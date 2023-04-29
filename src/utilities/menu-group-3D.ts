@@ -14,11 +14,15 @@ export class MenuGroup3D
     //  NOTE: this should be static, but static defs seem to break in the SDK deployment
     private object_locations:string[] = 
     [
+        //empty
         "",
-        "models/utilities/MenuButtonSquare.glb",
-        "models/utilities/MenuButtonSquare.glb",
-        "models/utilities/MenuButtonSquare.glb",
-        "models/utilities/MenuPanel3D.glb",
+        //panels
+        "models/utilities/Menu3D_Panel_Square.glb",
+        "models/utilities/Menu3D_Panel_Long.glb",
+        //buttons
+        "models/utilities/Menu3D_Button_Square.glb",
+        "models/utilities/Menu3D_Button_Long.glb",
+        "models/utilities/Menu3D_Button_Narrow.glb",
     ];
 
     //parental object for menu group, holds all associated objects (menu, toggle, etc)

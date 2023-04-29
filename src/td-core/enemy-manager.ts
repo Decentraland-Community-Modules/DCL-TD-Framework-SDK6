@@ -24,7 +24,7 @@ export class EnemyUnitManager extends Entity
     }
 
     //max allowed count of units allowed
-    private enemySizeMax:number = 100;
+    private enemySizeMax:number = 80;
     //number of enemies in use
     enemySizeCur:number = 0;
     //number of enemies remaining in wave
@@ -145,7 +145,11 @@ export class EnemyUnitManager extends Entity
         }
     }
     
-
+    /**
+     * 
+     * @param index 
+     * @returns 
+     */
     public GetEnemyUnitByIndex(index:number):undefined|EnemyUnitObject
     {
         if(this.enemyDict.containsKey(index.toString()))
@@ -165,7 +169,7 @@ export class EnemyUnitManager extends Entity
      * @param type index of definition this unit will be typed as
      * @returns reference to this unit or undefined if unit was not found
      */
-    public AssignEnemyUnit(type:number):undefined|EnemyUnitObject
+    public AssignEnemyUnit(type:number, waypoint:number):undefined|EnemyUnitObject
     {
         if(GameState.debuggingEnemy) { log("Enemy Manager: - assigning new enemy of type: "+type.toString()+"..."); }
         //get object
@@ -181,7 +185,7 @@ export class EnemyUnitManager extends Entity
         obj.SetEngineState(false);
 
         //initialize with new data
-        obj.Initialize(type, this.enemyModelDict.getItem(type.toString()));
+        obj.Initialize(type, waypoint, this.enemyModelDict.getItem(type.toString()));
         this.enemySizeCur++;
 
         //disable enemy

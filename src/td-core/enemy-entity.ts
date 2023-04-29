@@ -106,6 +106,20 @@ export class EnemyUnitObject extends Entity
         this.OnDeath = unitDeath;
     }
 
+    public static CalcHealth(type:number, wave:number):number
+    {
+        return (EnemyData[type].ValueHealthBase + (EnemyData[type].ValueHealthGrowth * wave)) * (DifficultyData[GameState.DifficultyCur].EnemyHealthPercent / 100);
+    }
+
+    public static CalcArmour(type:number, wave:number):number
+    {
+        return (EnemyData[type].ValueArmourBase + (EnemyData[type].ValueArmourGrowth * wave)) * (DifficultyData[GameState.DifficultyCur].EnemyArmorPercent / 100);
+    }
+    public static CalcMoveSpeed(type:number, wave:number):number
+    {
+        return EnemyData[type].ValueSpeed * (DifficultyData[GameState.DifficultyCur].EnemySpeedPercent / 100);
+    }
+
     /**
      * prepares the unit for use, setting up their survival details for the given wave
      *  the unit is then pushed to a spawn point and begins traversal
@@ -113,7 +127,7 @@ export class EnemyUnitObject extends Entity
      * @param shape shape object to change to
      * @returns reference to this unit
      */
-    public Initialize(type:number, shape:GLTFShape):EnemyUnitObject
+    public Initialize(type:number, waypoint:number, shape:GLTFShape):EnemyUnitObject
     {
         //claim unit
         this.IsAlive = true;
@@ -122,13 +136,13 @@ export class EnemyUnitObject extends Entity
         this.Type = type;
 
         //calculate survivability
-        this.HealthMax = (EnemyData[type].ValueHealthBase + (EnemyData[type].ValueHealthGrowth * GameState.WaveCur)) * (DifficultyData[GameState.DifficultyCur].EnemyHealthPercent / 100);
+        this.HealthMax = EnemyUnitObject.CalcHealth(type, GameState.WaveCur);
         this.HealthCur = this.HealthMax;
-        this.Armour = (EnemyData[type].ValueArmourBase + (EnemyData[type].ValueArmourGrowth * GameState.WaveCur)) * (DifficultyData[GameState.DifficultyCur].EnemyArmorPercent / 100);
+        this.Armour = EnemyUnitObject.CalcArmour(type, GameState.WaveCur);
         
         //set waypoints
         this.unitSystem.SetTarget(WaypointManager.Instance.GetSpawnPoint(), true);
-        this.unitSystem.unitMoveSpeed = EnemyData[type].ValueSpeed * (DifficultyData[GameState.DifficultyCur].EnemySpeedPercent / 100);
+        this.unitSystem.unitMoveSpeed = EnemyUnitObject.CalcMoveSpeed(type, GameState.WaveCur);
         this.unitSystem.attackLength = EnemyData[type].ValueAttackIntervalFull;
         this.unitSystem.attackDamagePeriod = EnemyData[type].ValueAttackIntervalDamage;
         
@@ -136,7 +150,7 @@ export class EnemyUnitObject extends Entity
 
         //reset health bar
         this.healthBarCur.getComponent(Transform).position = new Vector3(EnemyData[type].HealthPos[0],EnemyData[type].HealthPos[1],EnemyData[type].HealthPos[2]);
-        this.healthBarCur.getComponent(Transform).scale = new Vector3(1,1,1);
+        this.healthBarCur.getComponent(Transform).scale = new Vector3(EnemyData[type].HealthScale[0],EnemyData[type].HealthScale[1],EnemyData[type].HealthScale[2]);
 
         //process shape change
         if(this.unitAvatar.hasComponent(GLTFShape))
@@ -183,14 +197,17 @@ export class EnemyUnitObject extends Entity
             return true;
         }
 
-        //remove health
+        //remove and clamp health
         this.HealthCur -= dam - Math.max(0, this.Armour-pen);
-
-        //clamp health
         if(this.HealthCur < 0) this.HealthCur = 0;
 
         //adjust health bar
-        this.healthBarCur.getComponent(Transform).scale = new Vector3(this.HealthCur/this.HealthMax, this.HealthCur/this.HealthMax, this.HealthCur/this.HealthMax);
+        this.healthBarCur.getComponent(Transform).scale = new Vector3
+        (
+            this.HealthCur/this.HealthMax * EnemyData[this.Type].ObjectScale[0], 
+            this.HealthCur/this.HealthMax * EnemyData[this.Type].ObjectScale[1], 
+            this.HealthCur/this.HealthMax * EnemyData[this.Type].ObjectScale[2]
+        );
 
         if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": damage dealt to unit, health remaining = "+this.HealthCur.toString()) }
         if(this.HealthCur == 0)
@@ -212,20 +229,18 @@ export class EnemyUnitObject extends Entity
             //death callback
             this.OnDeath(this.Index);
 
+            //enemy has been killed
             return false;
         }
         else
         {
-        }
+            //rend and clamp armour
+            this.Armour -= rend;
+            if(this.Armour >= 0) { this.Armour = 0; }
 
-        //remove armour
-        this.Armour -= this.Armour;
-        if(this.Armour >= 0)
-        {
-            this.Armour = 0;
+            //enemy is still alive
+            return true;
         }
-
-        return true;
     }
     
     /**

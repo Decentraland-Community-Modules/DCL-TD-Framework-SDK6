@@ -12,7 +12,7 @@ export class EnemyWaveDisplay extends Entity
     displayObject:Entity[];
 
     //3D text screens
-    menuGroup:MenuGroup3D;
+    //menuGroup:MenuGroup3D;
 
     //constructor
     constructor()
@@ -66,6 +66,6 @@ export class EnemyWaveDisplay extends Entity
         }));
 
         //prepare 3D text/stats display
-        this.menuGroup = new MenuGroup3D(this);
+        //this.menuGroup = new MenuGroup3D(this);
     }
 }

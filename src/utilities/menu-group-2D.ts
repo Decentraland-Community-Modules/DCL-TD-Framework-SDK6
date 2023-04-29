@@ -456,7 +456,9 @@ class menuGroup2DReference
     static imageSources:Texture[] = 
     [
         new Texture("images/menuDebugging.png"),
-        new Texture("images/menuSpliceSheet.png")
+        new Texture("images/menuSpliceSheet.png"),
+        new Texture("images/uiGameHeaderCore.png"),
+        new Texture("images/uiGameHeaderEnemy.png")
     ];
     static getImageSource(image:number):Texture
     {
@@ -505,6 +507,12 @@ class menuGroup2DReference
             [1050,500], //next small
             [1200,500], //back small
             [1200,600], //help small
+        ],
+        [
+            [0,0],    //title
+        ],
+        [
+            [0,0],    //title
         ]
     ];
     //size types of on-source splices
@@ -537,6 +545,12 @@ class menuGroup2DReference
             4,  //next small
             4,  //back small
             4,  //help small
+        ],
+        [
+            0,
+        ],
+        [
+            0,
         ]
     ];
     //size definitions
@@ -554,6 +568,12 @@ class menuGroup2DReference
             [300,100],  //medium
             [150,100],  //short
             [300,200],  //square(ish)
+        ],
+        [
+            [1170,305],    //title
+        ],
+        [
+            [1170,305],    //title
         ]
     ];
 }

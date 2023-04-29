@@ -5,54 +5,53 @@
 import { MenuGroup2D } from "src/utilities/menu-group-2D";
 import { MenuGroup3D } from "src/utilities/menu-group-3D";
 import { DifficultyData } from "./data/difficulty-data";
+import { EnemyWaveManager } from "./enemy-wave-manager";
+import { EnemyUnitManager } from "./enemy-manager";
+import { EnemyUnitObject } from "./enemy-entity";
+import { TowerFoundation } from "./tower-entity";
 import { EnemyData } from "./data/enemy-data";
 import { dataTowers } from "./data/tower-data";
-import { EnemyUnitManager } from "./enemy-manager";
-import { EnemyWaveManager } from "./enemy-wave-manager";
 import { GameState } from "./game-states";
-import { TowerFoundation } from "./tower-entity";
-import { TowerManager } from "./tower-manager";
-export class GameMenu2D
+export class GameMenu
 {
     //access pocketing
-    private static instance:undefined|GameMenu2D;
-    public static get Instance():GameMenu2D
+    private static instance:undefined|GameMenu;
+    public static get Instance():GameMenu
     {
         //ensure instance is set
-        if(GameMenu2D.instance === undefined)
+        if(GameMenu.instance === undefined)
         {
-            GameMenu2D.instance = new GameMenu2D();
+            GameMenu.instance = new GameMenu();
         }
 
-        return GameMenu2D.instance;
+        return GameMenu.instance;
     }
 
     //constructor
     //  generates and places each object
     constructor()
     {
+        //2D
         this.menuGroupHUD = new MenuGroup2D();
         this.menuHUDSetup2D();
-        this.menuGroupHUD.groupParent.vAlign = "top";
-        this.menuGroupHUD.groupParent.hAlign = "left";
 
-        this.menuGroupController = new MenuGroup2D();
-        this.menuControllerSetup();
-        this.menuGroupController.groupParent.vAlign = "top";
-        this.menuGroupController.groupParent.hAlign = "left";
+        //3D main menu
+        this.menuGroupMainMenu = new MenuGroup3D();
+        this.menuGroupMainMenu.SetColour(new Color3(1,0,1));
+        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(44,0,32));
+        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,90,0));
+        this.menuMainSetup();
 
-        //2D
-        //this.menuGroupTower = new MenuGroup2D();
-        //3D
+        //3D tower menu
         this.menuGroupTower = new MenuGroup3D();
-        this.menuGroupTower.SetColour(new Color3(0, 1, 0));
-        this.menuGroupTower.AdjustMenuParent(0,new Vector3(16,0,8));
+        this.menuGroupTower.SetColour(new Color3(1,0,1));
+        this.menuGroupTower.AdjustMenuParent(0,new Vector3(8,0,8));
         this.menuTowerSetup();
 
-        //3D entry menu
+        //3D info menu
         this.menuGroupSceneInfo = new MenuGroup3D();
-        this.menuGroupSceneInfo.SetColour(new Color3(0, 1, 0));
-        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(4,0,4));
+        this.menuGroupSceneInfo.SetColour(new Color3(1,0,1));
+        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(20,0,20));
         this.menuGroupSceneInfo.AdjustMenuParent(2,new Vector3(0,0,0));
         this.menuTutorialSetup();
     }
@@ -62,694 +61,521 @@ export class GameMenu2D
     //  setup
     private menuHUDSetup2D()
     {
-        //GENERAL HUD
+        //parent settings
+        this.menuGroupHUD.groupParent.width = 500;
+        this.menuGroupHUD.groupParent.height = 0;
+        this.menuGroupHUD.groupParent.positionY = 73;
+        this.menuGroupHUD.groupParent.vAlign = "top";
+        this.menuGroupHUD.groupParent.hAlign = "center";
+        
+        //hud enemy count
         //  parent obj
-        this.menuGroupHUD.AddMenuObject("background");
-        this.menuGroupHUD.AdjustMenuObject("background", 0, new Vector2(200,60));
-        this.menuGroupHUD.AdjustMenuObject("background", 1, new Vector2(195,165));
-        this.menuGroupHUD.AdjustMenuObject("background", 2, new Vector2(0,0));
-        this.menuGroupHUD.AdjustMenuColour("background", new Color4(0.2, 0.2, 0.2, 1));
-        //  state
-        //      object
-        this.menuGroupHUD.AddMenuObject("GameState", "background");
-        this.menuGroupHUD.AdjustMenuObject("GameState", 0, new Vector2(0,-5));
-        this.menuGroupHUD.AdjustMenuObject("GameState", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("GameState", "Img", 1, 1, true);
-        this.menuGroupHUD.AdjustImageObject("GameState", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("GameState", "Img", 1, 3, new Vector2(2, 0.25), true);
-        this.menuGroupHUD.GetMenuImageObject("GameState", "Img").height = 60;
-        this.menuGroupHUD.GetMenuObject("GameState").rect.positionY = -20;
-        //      current game state text
-        this.menuGroupHUD.AddMenuText("GameState", "TextValue", "GAME_STATE");
-        this.menuGroupHUD.AdjustTextDisplay("GameState", "TextValue", 0, 16);
-        this.menuGroupHUD.AdjustTextObject("GameState", "TextValue", 0, new Vector2(0,0));
+        this.menuGroupHUD.AddMenuObject("hudEnemy");
+        this.menuGroupHUD.AdjustMenuObject("hudEnemy", 0, new Vector2(0,0)); //position
+        this.menuGroupHUD.AdjustMenuObject("hudEnemy", 1, new Vector2(500,150)); //size
+        this.menuGroupHUD.AdjustMenuObject("hudEnemy", 2, new Vector2(1,0)); //alignment
+        this.menuGroupHUD.AdjustMenuColour("hudEnemy", new Color4(0.2, 0.2, 0.2, 0));
+        //  frame img
+        this.menuGroupHUD.AddImageObject("hudEnemy", "imgEnemy", 3, 0, true);
+        this.menuGroupHUD.AdjustImageObject("hudEnemy", "imgEnemy", 2, 1, new Vector2(0,0));
+        this.menuGroupHUD.AdjustImageObject("hudEnemy", "imgEnemy", 2, 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustImageObject("hudEnemy", "imgEnemy", 2, 3, new Vector2(0,0.35), false);
+        //  enemy count
+        this.menuGroupHUD.AddMenuText("hudEnemy", "TextEnemy", "####");
+        this.menuGroupHUD.AdjustTextDisplay("hudEnemy", "TextEnemy", 0, 18);
+        this.menuGroupHUD.AdjustTextObject("hudEnemy", "TextEnemy", 0, new Vector2(32,-81));
+        this.menuGroupHUD.AdjustTextObject("hudEnemy", "TextEnemy", 1, new Vector2(80,0));
+        this.menuGroupHUD.AdjustTextObject("hudEnemy", "TextEnemy", 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustTextObject("hudEnemy", "TextEnemy", 3, new Vector2(2,1));
+
+        //hud main display
+        //  parent obj
+        this.menuGroupHUD.AddMenuObject("hudMain");
+        this.menuGroupHUD.AdjustMenuObject("hudMain", 0, new Vector2(0,0)); //position
+        this.menuGroupHUD.AdjustMenuObject("hudMain", 1, new Vector2(500,150)); //size
+        this.menuGroupHUD.AdjustMenuObject("hudMain", 2, new Vector2(1,0)); //alignment
+        this.menuGroupHUD.AdjustMenuColour("hudMain", new Color4(0.2, 0.2, 0.2, 0));
+        //  frame
+        this.menuGroupHUD.AddImageObject("hudMain", "imgMain", 2, 0, true);
+        this.menuGroupHUD.AdjustImageObject("hudMain", "imgMain", 2, 1, new Vector2(0,0));
+        this.menuGroupHUD.AdjustImageObject("hudMain", "imgMain", 2, 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustImageObject("hudMain", "imgMain", 2, 3, new Vector2(0,0.35), false);
+        //  game waves
+        this.menuGroupHUD.AddMenuText("hudMain", "TextWaves", "###");
+        this.menuGroupHUD.AdjustTextDisplay("hudMain", "TextWaves", 0, 18);
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextWaves", 0, new Vector2(17,-16));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextWaves", 1, new Vector2(80,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextWaves", 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextWaves", 3, new Vector2(2,1));
         //  player health
-        //      object
-        this.menuGroupHUD.AddMenuObject("LifeCount", "background");
-        this.menuGroupHUD.AdjustMenuObject("LifeCount", 0, new Vector2(0,-60));
-        this.menuGroupHUD.AdjustMenuObject("LifeCount", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("LifeCount", "Img", 1, 1, true);
-        this.menuGroupHUD.AdjustImageObject("LifeCount", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("LifeCount", "Img", 1, 3, new Vector2(2, 0.25), true);
-        //      text title
-        this.menuGroupHUD.AddMenuText("LifeCount", "TextTitle", "LIFE: ");
-        this.menuGroupHUD.AdjustTextDisplay("LifeCount", "TextTitle", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("LifeCount", "TextTitle", 0, new Vector2(5,0));
-        this.menuGroupHUD.AdjustTextObject("LifeCount", "TextTitle", 3, new Vector2(0,1));
-        //      text value
-        this.menuGroupHUD.AddMenuText("LifeCount", "TextValue", "###");
-        this.menuGroupHUD.AdjustTextDisplay("LifeCount", "TextValue", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("LifeCount", "TextValue", 0, new Vector2(50,0));
-        this.menuGroupHUD.AdjustTextObject("LifeCount", "TextValue", 3, new Vector2(0,1));
-        /* //  player score
-        //      object
-        this.menuGroup2D.AddMenuObject("ScoreCount", "background");
-        this.menuGroup2D.AdjustMenuObject("ScoreCount", 0, new Vector2(37.5,-80));
-        this.menuGroup2D.AdjustMenuObject("ScoreCount", 1, new Vector2(750/4,200/4));
-        this.menuGroup2D.AdjustMenuObject("ScoreCount", 2, new Vector2(1,0));
-        //      image
-        this.menuGroup2D.AddImageObject("ScoreCount", "Img", 1, true);
-        this.menuGroup2D.AdjustImageObject("ScoreCount", "Img", 1, new Vector2(750/4,200/4));
-        this.menuGroup2D.AdjustImageObject("ScoreCount", "Img", 2, new Vector2(1,1));
-        //      text title
-        this.menuGroup2D.AddMenuText("ScoreCount", "TextTitle", "-SCORE-");
-        this.menuGroup2D.AdjustTextDisplay("ScoreCount", "TextTitle", 0, 16);
-        this.menuGroup2D.AdjustTextObject("ScoreCount", "TextTitle", 0, new Vector2(0,10));
-        this.menuGroup2D.AdjustTextObject("ScoreCount", "TextTitle", 3, new Vector2(1,1));
-        //      text value
-        this.menuGroup2D.AddMenuText("ScoreCount", "TextValue", "######");
-        this.menuGroup2D.AdjustTextDisplay("ScoreCount", "TextValue", 0, 18);
-        this.menuGroup2D.AdjustTextObject("ScoreCount", "TextValue", 0, new Vector2(0,-10));
-        this.menuGroup2D.AdjustTextObject("ScoreCount", "TextValue", 3, new Vector2(1,1));
-        */
-        //  wave count
-        //      object
-        this.menuGroupHUD.AddMenuObject("WaveCount", "background");
-        this.menuGroupHUD.AdjustMenuObject("WaveCount", 0, new Vector2(0,-85));
-        this.menuGroupHUD.AdjustMenuObject("WaveCount", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("WaveCount", "Img", 1, 6, true);
-        this.menuGroupHUD.AdjustImageObject("WaveCount", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("WaveCount", "Img", 1, 3, new Vector2(2, 0.25), true);
-        //      text value
-        this.menuGroupHUD.AddMenuText("WaveCount", "TextValue", "###");
-        this.menuGroupHUD.AdjustTextDisplay("WaveCount", "TextValue", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("WaveCount", "TextValue", 0, new Vector2(-5,0));
-        this.menuGroupHUD.AdjustTextObject("WaveCount", "TextValue", 3, new Vector2(2,1));
-        //  unit count
-        //      object
-        this.menuGroupHUD.AddMenuObject("UnitCount", "background");
-        this.menuGroupHUD.AdjustMenuObject("UnitCount", 0, new Vector2(0,-110));
-        this.menuGroupHUD.AdjustMenuObject("UnitCount", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("UnitCount", "Img", 1, 7, true);
-        this.menuGroupHUD.AdjustImageObject("UnitCount", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("UnitCount", "Img", 1, 3, new Vector2(2, 0.25), true);
-        //      text value
-        this.menuGroupHUD.AddMenuText("UnitCount", "TextValue", "###");
-        this.menuGroupHUD.AdjustTextDisplay("UnitCount", "TextValue", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("UnitCount", "TextValue", 0, new Vector2(-5,0));
-        this.menuGroupHUD.AdjustTextObject("UnitCount", "TextValue", 3, new Vector2(2,1));
-        //  unit type
-        //      object
-        this.menuGroupHUD.AddMenuObject("UnitType", "background");
-        this.menuGroupHUD.AdjustMenuObject("UnitType", 0, new Vector2(0,-135));
-        this.menuGroupHUD.AdjustMenuObject("UnitType", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("UnitType", "Img", 1, 1, true);
-        this.menuGroupHUD.AdjustImageObject("UnitType", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("UnitType", "Img", 1, 3, new Vector2(2, 0.25), true);
-        //      text title
-        this.menuGroupHUD.AddMenuText("UnitType", "TextTitle", "TYPE: ");
-        this.menuGroupHUD.AdjustTextDisplay("UnitType", "TextTitle", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("UnitType", "TextTitle", 0, new Vector2(5,0));
-        this.menuGroupHUD.AdjustTextObject("UnitType", "TextTitle", 3, new Vector2(0,1));
-        //      text value
-        this.menuGroupHUD.AddMenuText("UnitType", "TextValue", "###");
-        this.menuGroupHUD.AdjustTextDisplay("UnitType", "TextValue", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("UnitType", "TextValue", 0, new Vector2(-5,0));
-        this.menuGroupHUD.AdjustTextObject("UnitType", "TextValue", 3, new Vector2(2,1));
-        //  money count
-        //      object
-        this.menuGroupHUD.AddMenuObject("MoneyCount", "background");
-        this.menuGroupHUD.AdjustMenuObject("MoneyCount", 0, new Vector2(0,-160));
-        this.menuGroupHUD.AdjustMenuObject("MoneyCount", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupHUD.AddImageObject("MoneyCount", "Img", 1, 8, true);
-        this.menuGroupHUD.AdjustImageObject("MoneyCount", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupHUD.AdjustImageObject("MoneyCount", "Img", 1, 3, new Vector2(2, 0.25), true);
-        //      text value
-        this.menuGroupHUD.AddMenuText("MoneyCount", "TextValue", "ENEMY_NAME");
-        this.menuGroupHUD.AdjustTextDisplay("MoneyCount", "TextValue", 0, 18);
-        this.menuGroupHUD.AdjustTextObject("MoneyCount", "TextValue", 0, new Vector2(-5,0));
-        this.menuGroupHUD.AdjustTextObject("MoneyCount", "TextValue", 3, new Vector2(2,1));
-        /* //  wave next timer display
-        //      object
-        this.menuGroup2D.AddMenuObject("WaveNext", "background");
-        this.menuGroup2D.AdjustMenuObject("WaveNext", 0, new Vector2(93.5,-105));
-        this.menuGroup2D.AdjustMenuObject("WaveNext", 2, new Vector2(1,0));
-        //      image
-        this.menuGroup2D.AddImageObject("WaveNext", "Img", 2, true);
-        this.menuGroup2D.AdjustImageObject("WaveNext", "Img", 2, new Vector2(1,1));
-        this.menuGroup2D.AdjustImageObject("WaveNext", "Img", 3, new Vector2(3, 0.25), true);
-        //      text value
-        this.menuGroup2D.AddMenuText("WaveNext", "TextValue", "<NEXT_WAVE>");
-        this.menuGroup2D.AdjustTextDisplay("WaveNext", "TextValue", 0, 8);
-        this.menuGroup2D.AdjustTextObject("WaveNext", "TextValue", 0, new Vector2(0,0));
-        this.menuGroup2D.AdjustTextObject("WaveNext", "TextValue", 3, new Vector2(1,1));
-        */
+        this.menuGroupHUD.AddMenuText("hudMain", "TextLife", "####");
+        this.menuGroupHUD.AdjustTextDisplay("hudMain", "TextLife", 0, 18);
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextLife", 0, new Vector2(-37,-44));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextLife", 1, new Vector2(60,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextLife", 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextLife", 3, new Vector2(2,1));
+        //  player money
+        this.menuGroupHUD.AddMenuText("hudMain", "TextMoney", "####");
+        this.menuGroupHUD.AdjustTextDisplay("hudMain", "TextMoney", 0, 18);
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextMoney", 0, new Vector2(120,-44));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextMoney", 1, new Vector2(60,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextMoney", 2, new Vector2(1,0));
+        this.menuGroupHUD.AdjustTextObject("hudMain", "TextMoney", 3, new Vector2(2,1));
     }
-    //  updates
-    updateGameState() { this.menuGroupHUD.SetMenuText("GameState", "TextValue", GameState.stateStrings[GameState.stateCur]); }
-    updateLifeCount() { this.menuGroupHUD.SetMenuText("LifeCount", "TextValue", GameState.PlayerHealth.toString()); }
-    updateWaveCount() { this.menuGroupHUD.SetMenuText("WaveCount", "TextValue", GameState.WaveCur.toString()); }
-    updateUnitCount() { this.menuGroupHUD.SetMenuText("UnitCount", "TextValue", EnemyUnitManager.Instance.enemySizeCur.toString()+" ("+EnemyUnitManager.Instance.enemySizeRemaining.toString()+")"); }
-    updateUnitType() 
-    { 
-        if(EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[0].enemyIndex == EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[1].enemyIndex)
-        {
-            this.menuGroupHUD.SetMenuText("UnitType", "TextValue", 
-                EnemyData[EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[0].enemyIndex].DisplayName);
-        }
-        else
-        {
-            this.menuGroupHUD.SetMenuText("UnitType", "TextValue", 
-                EnemyData[EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[0].enemyIndex].DisplayName+", "+
-                EnemyData[EnemyWaveManager.Instance.GetEnemyWaveCurrent().enemyUnits[1].enemyIndex].DisplayName); 
 
-        }
-    }
-    updateMoneyCount() { this.menuGroupHUD.SetMenuText("MoneyCount", "TextValue", GameState.PlayerMoney.toString()); }
-
-    //2D game controller
-    menuGroupController:MenuGroup2D;
-    //  callbacks
+    //3D main menu
+    menuGroupMainMenu:MenuGroup3D;
+    
+    //callbacks
+    //  set difficulties
     public SetDifficulty:(num:number) => void = this.setDifficulty;
-    private setDifficulty(num:number) { log("game menu callback not set - set difficulty"); }
+    private setDifficulty(num:number) { log("game menu callback not set - set difficulty "+num.toString()); }
+    //  start wave
+    public GameReset:() => void = this.gameReset;
+    private gameReset() { log("game menu callback not set - reset game"); }
+    //  start game
     public GameStart:() => void = this.gameStart;
     private gameStart() { log("game menu callback not set - start game"); }
+    //  start wave
     public WaveStart:() => void = this.waveStart;
     private waveStart() { log("game menu callback not set - start wave"); }
-    //  setup
-    private menuControllerSetup()
+    
+    //setup
+    private menuMainSetup()
     {
-        //CONTROLLER HUD
-        //  parent obj
-        this.menuGroupController.AddMenuObject("background");
-        this.menuGroupController.AdjustMenuObject("background", 0, new Vector2(400,60));
-        this.menuGroupController.AdjustMenuObject("background", 1, new Vector2(270,155));
-        this.menuGroupController.AdjustMenuObject("background", 2, new Vector2(0,0));
-        this.menuGroupController.AdjustMenuColour("background", new Color4(0.2, 0.2, 0.2, 1));
-        //  title
-        //      image
-        this.menuGroupController.AddImageObject("background", "Img", 1, 5, true);
-        this.menuGroupController.AdjustImageObject("background", "Img", 1, 0, new Vector2(0,-5));
-        this.menuGroupController.AdjustImageObject("background", "Img", 1, 2, new Vector2(1,0));
-        this.menuGroupController.AdjustImageObject("background", "Img", 1, 3, new Vector2(0, 0.25), false);
-        //  state
-        //      object
-        this.menuGroupController.AddMenuObject("GameState", "background");
-        this.menuGroupController.AdjustMenuObject("GameState", 0, new Vector2(0,-55));
-        this.menuGroupController.AdjustMenuObject("GameState", 2, new Vector2(1,0));
-        //      image
-        this.menuGroupController.AddImageObject("GameState", "Img", 1, 0, true);
-        this.menuGroupController.AdjustImageObject("GameState", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupController.AdjustImageObject("GameState", "Img", 1, 3, new Vector2(1, 0.25), true);
-        //      current game state text
-        this.menuGroupController.AddMenuText("GameState", "TextValue", "GAME_STATE");
-        this.menuGroupController.AdjustTextDisplay("GameState", "TextValue", 0, 18);
-        this.menuGroupController.AdjustTextObject("GameState", "TextValue", 0, new Vector2(0,0));
-        //  difficulty
-        //      object
-        this.menuGroupController.AddMenuObject("Difficulty", "background");
-        this.menuGroupController.AdjustMenuObject("Difficulty", 0, new Vector2(0,-80));
-        this.menuGroupController.AdjustMenuObject("Difficulty", 1, new Vector2(190,20));
-        this.menuGroupController.AdjustMenuObject("Difficulty", 2, new Vector2(1,0));
-        //      image background
-        this.menuGroupController.AddImageObject("Difficulty", "Img", 1, 1, true);
-        this.menuGroupController.AdjustImageObject("Difficulty", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupController.AdjustImageObject("Difficulty", "Img", 1, 3, new Vector2(1, 0.25), true);
-        //      text
-        this.menuGroupController.AddMenuText("Difficulty", "TextTitle", "DIFFICULTY");
-        this.menuGroupController.AdjustTextDisplay("Difficulty", "TextTitle", 0, 18);
-        this.menuGroupController.AdjustTextObject("Difficulty", "TextTitle", 0, new Vector2(0,0));
-        this.menuGroupController.AdjustTextObject("Difficulty", "TextTitle", 3, new Vector2(1,1));
-        //      object - increase
-        this.menuGroupController.AddImageObject("Difficulty", "ImgIncrease", 1, 15, true);
-        this.menuGroupController.AdjustImageObject("Difficulty", "ImgIncrease", 1, 2, new Vector2(2,1));
-        this.menuGroupController.AdjustImageObject("Difficulty", "ImgIncrease", 1, 3, new Vector2(4, 0.25), false);
-        this.menuGroupController.GetMenuImageObject("Difficulty", "ImgIncrease").onClick = new OnPointerDown(() => { this.SetDifficulty(GameState.DifficultyCur+1); });
-        //      object - decrease
-        this.menuGroupController.AddImageObject("Difficulty", "ImgDecrease", 1, 16, true);
-        this.menuGroupController.AdjustImageObject("Difficulty", "ImgDecrease", 1, 2, new Vector2(0,1));
-        this.menuGroupController.AdjustImageObject("Difficulty", "ImgDecrease", 1, 3, new Vector2(4, 0.25), false);
-        this.menuGroupController.GetMenuImageObject("Difficulty", "ImgDecrease").onClick = new OnPointerDown(() => { this.SetDifficulty(GameState.DifficultyCur-1); });
-        //  start game
-        //      object
-        this.menuGroupController.AddMenuObject("contStartGame", "background");
-        this.menuGroupController.AdjustMenuObject("contStartGame", 0, new Vector2(-60,-115));
-        this.menuGroupController.AdjustMenuObject("contStartGame", 1, new Vector2(190,20));
-        this.menuGroupController.AdjustMenuObject("contStartGame", 2, new Vector2(1,0));
-        //      image background
-        this.menuGroupController.AddImageObject("contStartGame", "Img", 1, 9, true);
-        this.menuGroupController.AdjustImageObject("contStartGame", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupController.AdjustImageObject("contStartGame", "Img", 1, 3, new Vector2(3, 0.35), true);
-        this.menuGroupController.GetMenuImageObject("contStartGame", "Img").onClick = new OnPointerDown(() => { this.GameStart(); });
-        //  start wave
-        //      object
-        this.menuGroupController.AddMenuObject("contWaveGame", "background");
-        this.menuGroupController.AdjustMenuObject("contWaveGame", 0, new Vector2(-60,-115));
-        this.menuGroupController.AdjustMenuObject("contWaveGame", 1, new Vector2(190,20));
-        this.menuGroupController.AdjustMenuObject("contWaveGame", 2, new Vector2(1,0));
-        //      image background
-        this.menuGroupController.AddImageObject("contWaveGame", "Img", 1, 2, true);
-        this.menuGroupController.AdjustImageObject("contWaveGame", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupController.AdjustImageObject("contWaveGame", "Img", 1, 3, new Vector2(3, 0.35), true);
-        this.menuGroupController.GetMenuImageObject("contWaveGame", "Img").onClick = new OnPointerDown(() => { this.WaveStart(); });
-        //      text
-        this.menuGroupController.AddMenuText("contWaveGame", "TextTitle", "<Start Wave>");
-        this.menuGroupController.AdjustTextDisplay("contWaveGame", "TextTitle", 0, 14);
-        this.menuGroupController.AdjustTextObject("contWaveGame", "TextTitle", 3, new Vector2(1,1));
-        //  reset game
-        //      object
-        this.menuGroupController.AddMenuObject("ResetGame", "background");
-        this.menuGroupController.AdjustMenuObject("ResetGame", 0, new Vector2(60,-115));
-        this.menuGroupController.AdjustMenuObject("ResetGame", 1, new Vector2(190,20));
-        this.menuGroupController.AdjustMenuObject("ResetGame", 2, new Vector2(1,0));
-        //      image background
-        this.menuGroupController.AddImageObject("ResetGame", "Img", 1, 2, true);
-        this.menuGroupController.AdjustImageObject("ResetGame", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupController.AdjustImageObject("ResetGame", "Img", 1, 3, new Vector2(3, 0.35), true);
-        this.menuGroupController.GetMenuImageObject("ResetGame", "Img").onClick = new OnPointerDown(() => { this.GameStart(); });
-        //      text
-        this.menuGroupController.AddMenuText("ResetGame", "TextTitle", "<Reset>");
-        this.menuGroupController.AdjustTextDisplay("ResetGame", "TextTitle", 0, 14);
-        this.menuGroupController.AdjustTextObject("ResetGame", "TextTitle", 3, new Vector2(1,1));
+        //create overhead object
+        this.menuGroupMainMenu.AddMenuObject("menuOffset", 0);
+        this.menuGroupMainMenu.AdjustMenuObject("menuOffset", 0, new Vector3(0,1.5,-1));
+        this.menuGroupMainMenu.AdjustMenuObject("menuOffset", 1, new Vector3(1,1,1));
+
+        //MAIN GAME DETAILS
+        //  offset
+        this.menuGroupMainMenu.AddMenuObject("menuMainFrame", 2, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("menuMainFrame", 0, new Vector3(0,0,0));
+        this.menuGroupMainMenu.AdjustMenuObject("menuMainFrame", 1, new Vector3(1,1,1));
+        //  main menu display object
+        this.menuGroupMainMenu.AddMenuObject("menuMainInfo", 0, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("menuMainInfo", 0, new Vector3(0,0,0.0125));
+        this.menuGroupMainMenu.AdjustMenuObject("menuMainInfo", 1, new Vector3(1,1,1));
+        //  label header text
+        this.menuGroupMainMenu.AddMenuText("menuMainInfo", "menuLabel", "DCL TOWER DEFENCE");
+        this.menuGroupMainMenu.AdjustTextObject("menuMainInfo", "menuLabel", 0, new Vector3(0,0.65,0));
+        this.menuGroupMainMenu.AdjustTextObject("menuMainInfo", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("menuMainInfo", "menuLabel", 0, 5);
+
+        //SESSION CONTROLS (GAME START)
+        //  offset
+        this.menuGroupMainMenu.AddMenuObject("gameStartContainer", 0, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("gameStartContainer", 0, new Vector3(0,0,0));
+        this.menuGroupMainMenu.AdjustMenuObject("gameStartContainer", 1, new Vector3(1,1,1));
+        //  label header text
+        this.menuGroupMainMenu.AddMenuText("gameStartContainer", "menuLabel", "SELECT GAME DIFFICULTY");
+        this.menuGroupMainMenu.AdjustTextObject("gameStartContainer", "menuLabel", 0, new Vector3(0,0.3,0));
+        this.menuGroupMainMenu.AdjustTextObject("gameStartContainer", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("gameStartContainer", "menuLabel", 0, 4);
+        //  difficulty object
+        this.menuGroupMainMenu.AddMenuObject("interactDifficultyDisplay", 4, "gameStartContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyDisplay", 0, new Vector3(0.0,0.05,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyDisplay", 1, new Vector3(0.20,0.15,0.15));
+        //  difficulty label
+        this.menuGroupMainMenu.AddMenuText("interactDifficultyDisplay", "buttonLabel", "DIFFICULTY");
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyDisplay", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyDisplay", "buttonLabel", 1, new Vector3(0.75,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactDifficultyDisplay", "buttonLabel", 0, 5);
+        //  difficulty next object
+        this.menuGroupMainMenu.AddMenuObject("interactDifficultyDec", 3, "gameStartContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyDec", 0, new Vector3(-0.45,0.05,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyDec", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactDifficultyDec").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetDifficulty(GameState.DifficultyCur-1);
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "INCREASE DIFFICULTY", distance: 16 }
+            )
+        );
+        //  difficulty next label
+        this.menuGroupMainMenu.AddMenuText("interactDifficultyDec", "buttonLabel", "PREV");
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyDec", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyDec", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactDifficultyDec", "buttonLabel", 0, 5);
+        //  difficulty next object
+        this.menuGroupMainMenu.AddMenuObject("interactDifficultyInc", 3, "gameStartContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyInc", 0, new Vector3(0.45,0.05,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactDifficultyInc", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactDifficultyInc").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetDifficulty(GameState.DifficultyCur+1);
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "INCREASE DIFFICULTY", distance: 16 }
+            )
+        );
+        //  difficulty next label
+        this.menuGroupMainMenu.AddMenuText("interactDifficultyInc", "buttonLabel", "NEXT");
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyInc", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactDifficultyInc", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactDifficultyInc", "buttonLabel", 0, 5);
+        //  game start obj
+        this.menuGroupMainMenu.AddMenuObject("interactGameStart", 4, "gameStartContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameStart", 0, new Vector3(0.0,-0.55,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameStart", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactGameStart").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetTowerMenuState(false);
+                    this.GameStart(); 
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "START GAME", distance: 16 }
+            )
+        );
+        //  game start label
+        this.menuGroupMainMenu.AddMenuText("interactGameStart", "buttonLabel", "START");
+        this.menuGroupMainMenu.AdjustTextObject("interactGameStart", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactGameStart", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactGameStart", "buttonLabel", 0, 5);
+
+        //SESSION CONTROLS (BETWEEN WAVES)
+        //  offset
+        this.menuGroupMainMenu.AddMenuObject("waveBreakContainer", 0, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("waveBreakContainer", 0, new Vector3(0,0,0));
+        this.menuGroupMainMenu.AdjustMenuObject("waveBreakContainer", 1, new Vector3(1,1,1));
+        //  label header text
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "menuLabel", "PREPARE YOUR DEFENCES!");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "menuLabel", 0, new Vector3(0,0.4,0));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "menuLabel", 0, 4);
+        //  wave label
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "waveLabel", "WAVE: 000 / 000");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "waveLabel", 0, new Vector3(-0.6,0.2,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "waveLabel", 1, new Vector3(0.75,0.75,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "waveLabel", 0, 2);
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "waveLabel", 1, 0);
+        //  enemy name label 0
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "enemyNameLabel0", "<ENEMY NAME>");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyNameLabel0", 0, new Vector3(-0.7,0.025,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyNameLabel0", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyNameLabel0", 0, 1);
+        //  enemy stat label 0
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "enemyStatLabel0", "COUNT: 000\nHEALTH: 000\nARMOUR: 000");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyStatLabel0", 0, new Vector3(-1.0,-0.15,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyStatLabel0", 1, new Vector3(0.65,0.65,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyStatLabel0", 0, 1);
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyStatLabel0", 1, 0);
+        //  enemy name label 1
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "enemyNameLabel1", "<ENEMY NAME>");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyNameLabel1", 0, new Vector3(0.7,0.025,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyNameLabel1", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyNameLabel1", 0, 1);
+        //  enemy stat label 1
+        this.menuGroupMainMenu.AddMenuText("waveBreakContainer", "enemyStatLabel1", "COUNT: 000\nHEALTH: 000\nARMOUR: 000");
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyStatLabel1", 0, new Vector3(0.4,-0.15,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveBreakContainer", "enemyStatLabel1", 1, new Vector3(0.65,0.65,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyStatLabel1", 0, 1);
+        this.menuGroupMainMenu.AdjustTextDisplay("waveBreakContainer", "enemyStatLabel1", 1, 0);
+        //  wave start button
+        this.menuGroupMainMenu.AddMenuObject("interactWaveStart", 4, "waveBreakContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactWaveStart", 0, new Vector3(-0.25,-0.55,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactWaveStart", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactWaveStart").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetTowerMenuState(false);
+                    this.WaveStart(); 
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "START WAVE", distance: 16 }
+            )
+        );
+        //  wave start label
+        this.menuGroupMainMenu.AddMenuText("interactWaveStart", "buttonLabel", "START\nWAVE");
+        this.menuGroupMainMenu.AdjustTextObject("interactWaveStart", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactWaveStart", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactWaveStart", "buttonLabel", 0, 5);
+        //  game reset button
+        this.menuGroupMainMenu.AddMenuObject("interactGameReset", 4, "waveBreakContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 0, new Vector3(0.25,-0.55,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactGameReset").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetTowerMenuState(false);
+                    this.GameReset(); 
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+            )
+        );
+        //  game reset label
+        this.menuGroupMainMenu.AddMenuText("interactGameReset", "buttonLabel", "RESET\nGAME");
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactGameReset", "buttonLabel", 0, 5);
+
+        //SESSION CONTROLS (DURING WAVE)
+        //  offset
+        this.menuGroupMainMenu.AddMenuObject("waveOnGoingContainer", 0, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("waveOnGoingContainer", 0, new Vector3(0,0,0));
+        this.menuGroupMainMenu.AdjustMenuObject("waveOnGoingContainer", 1, new Vector3(1,1,1));
+        //  label header text
+        this.menuGroupMainMenu.AddMenuText("waveOnGoingContainer", "menuLabel", "DEFEND YOUR BASE!");
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "menuLabel", 0, new Vector3(0,0.4,0));
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveOnGoingContainer", "menuLabel", 0, 4);
+        //  wave label
+        this.menuGroupMainMenu.AddMenuText("waveOnGoingContainer", "waveLabel", "WAVE: 000 / 000");
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "waveLabel", 0, new Vector3(-0.6,0.2,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "waveLabel", 1, new Vector3(0.75,0.75,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveOnGoingContainer", "waveLabel", 0, 2);
+        this.menuGroupMainMenu.AdjustTextDisplay("waveOnGoingContainer", "waveLabel", 1, 0);
+        //  enemy count label
+        this.menuGroupMainMenu.AddMenuText("waveOnGoingContainer", "enemyCountLabel", "ENEMIES: 000");
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "enemyCountLabel", 0, new Vector3(-0.6,0.025,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("waveOnGoingContainer", "enemyCountLabel", 1, new Vector3(0.75,0.75,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("waveOnGoingContainer", "enemyCountLabel", 0, 2);
+        this.menuGroupMainMenu.AdjustTextDisplay("waveOnGoingContainer", "enemyCountLabel", 1, 0);
+        //  game reset button
+        this.menuGroupMainMenu.AddMenuObject("interactGameReset", 4, "waveOnGoingContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 0, new Vector3(0.25,-0.55,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactGameReset").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetTowerMenuState(false);
+                    this.GameReset(); 
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+            )
+        );
+        //  game reset label
+        this.menuGroupMainMenu.AddMenuText("interactGameReset", "buttonLabel", "RESET\nGAME");
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactGameReset", "buttonLabel", 0, 5);
+
+        //SESSION CONTROLS (GAME END)
+        //  offset
+        this.menuGroupMainMenu.AddMenuObject("gameEndContainer", 0, "menuOffset");
+        this.menuGroupMainMenu.AdjustMenuObject("gameEndContainer", 0, new Vector3(0,0,0));
+        this.menuGroupMainMenu.AdjustMenuObject("gameEndContainer", 1, new Vector3(1,1,1));
+        //  label header text
+        this.menuGroupMainMenu.AddMenuText("gameEndContainer", "menuLabel", "GAME OVER: ######!");
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "menuLabel", 0, new Vector3(0,0.4,0));
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("gameEndContainer", "menuLabel", 0, 4);
+        //  wave label
+        this.menuGroupMainMenu.AddMenuText("gameEndContainer", "waveLabel", "WAVES COMPLETED: 000 / 000");
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "waveLabel", 0, new Vector3(-0.6,0.2,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "waveLabel", 1, new Vector3(0.75,0.75,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("gameEndContainer", "waveLabel", 0, 2);
+        this.menuGroupMainMenu.AdjustTextDisplay("gameEndContainer", "waveLabel", 1, 0);
+        //  enemy count label
+        this.menuGroupMainMenu.AddMenuText("gameEndContainer", "enemyCountLabel", "ENEMIES SLAIN: 000");
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "enemyCountLabel", 0, new Vector3(-0.6,0.025,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("gameEndContainer", "enemyCountLabel", 1, new Vector3(0.75,0.75,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("gameEndContainer", "enemyCountLabel", 0, 2);
+        this.menuGroupMainMenu.AdjustTextDisplay("gameEndContainer", "enemyCountLabel", 1, 0);
+        //  game reset button
+        this.menuGroupMainMenu.AddMenuObject("interactGameReset", 4, "gameEndContainer");
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 0, new Vector3(0.25,-0.55,0));
+        this.menuGroupMainMenu.AdjustMenuObject("interactGameReset", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupMainMenu.GetMenuObject("interactGameReset").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => 
+                {
+                    this.SetTowerMenuState(false);
+                    this.GameReset(); 
+                },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+            )
+        );
+        //  game reset label
+        this.menuGroupMainMenu.AddMenuText("interactGameReset", "buttonLabel", "RESET\nGAME");
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupMainMenu.AdjustTextObject("interactGameReset", "buttonLabel", 1, new Vector3(1,1,1));
+        this.menuGroupMainMenu.AdjustTextDisplay("interactGameReset", "buttonLabel", 0, 5);
+
+        //enable main menu
+        this.menuGroupMainMenu.SetMenuState(true);
     }
-    //  updates
+
+    //updates
+    //  update difficulty display
     updateDifficulty()
     {
-        this.menuGroupController.SetMenuText( "Difficulty", "TextTitle", DifficultyData[GameState.DifficultyCur].DisplayName);
+        //3d
+        this.menuGroupMainMenu.SetMenuText("interactDifficultyDisplay", "buttonLabel", DifficultyData[GameState.DifficultyCur].DisplayName);
     }
-/*
-    //2D tower builder view
-    menuGroupTower:MenuGroup2D;
-    towerDisplayState:number = 0;       //selection type (0=building, 1=upgrading)
-    towerDefinitionIndex:number = 0;    //selected tower def
-    //  callbacks
-    public TowerBuild:() => void = this.towerBuild;
-    private towerBuild() { log("game menu callback not set - build tower"); }
-    public TowerSelection:() => number = this.towerSelection;
-    private towerSelection() { log("game menu callback not set - tower selection"); return 0; }
-    //  setup
-    private menuTowerSetup()
-    {
-        //TOWER BUILDER
-        //  parent obj
-        this.menuGroupTower.groupParent.width = 680;
-        this.menuGroupTower.groupParent.height = 480;
-        //  background
-        this.menuGroupTower.AddMenuObject("background");
-        this.menuGroupTower.AdjustMenuObject("background", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("background", "Img", 0, 0, true);
-        this.menuGroupTower.AdjustImageObject("background", "Img", 0, 2, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("background", "Img", 0, 3, new Vector2(0, 1), true);
-        //  title
-        //      object
-        this.menuGroupTower.AddMenuObject("title", "background");
-        this.menuGroupTower.AdjustMenuObject("title", 0, new Vector2(0,-5));
-        this.menuGroupTower.AdjustMenuObject("title", 1, new Vector2(680,50));
-        this.menuGroupTower.AdjustMenuObject("title", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustMenuColour("title", new Color4(0.2, 0.2, 0.2, 0));
-        //      title
-        this.menuGroupTower.AddMenuText("title", "Text", "MENU LABEL");
-        this.menuGroupTower.AdjustTextDisplay("title", "Text", 0, 42);
-        this.menuGroupTower.AdjustTextObject("title", "Text", 0, new Vector2(0,0));
-        //  button range
-        //      image
-        this.menuGroupTower.AddImageObject("title", "bRangeImg", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("title", "bRangeImg", 1, 0, new Vector2(2.5,0));
-        this.menuGroupTower.AdjustImageObject("title", "bRangeImg", 1, 2, new Vector2(0,1));
-        this.menuGroupTower.AdjustImageObject("title", "bRangeImg", 1, 3, new Vector2(5, 0.2), false);
-        this.menuGroupTower.GetMenuImageObject("title", "bRangeImg").width = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "bRangeImg").height = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "bRangeImg").onClick = new OnPointerDown(() => { this.SetTowerMenuState(false); });
-        //      text
-        this.menuGroupTower.AddMenuText("title", "bRangeText", "R");
-        this.menuGroupTower.AdjustTextDisplay("title", "bRangeText", 0, 50);
-        this.menuGroupTower.AdjustTextObject("title", "bRangeText", 0, new Vector2(-312.5,0));
-        //  button deconstruct
-        //      image
-        this.menuGroupTower.AddImageObject("title", "bDeconImg", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("title", "bDeconImg", 1, 0, new Vector2(-57.5,0));
-        this.menuGroupTower.AdjustImageObject("title", "bDeconImg", 1, 2, new Vector2(2,1));
-        this.menuGroupTower.AdjustImageObject("title", "bDeconImg", 1, 3, new Vector2(5, 0.2), false);
-        this.menuGroupTower.GetMenuImageObject("title", "bDeconImg").width = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "bDeconImg").height = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "bDeconImg").onClick = new OnPointerDown(() => {  });
-        //      text
-        this.menuGroupTower.AddMenuText("title", "bDeconText", "D");
-        this.menuGroupTower.AdjustTextDisplay("title", "bDeconText", 0, 50);
-        this.menuGroupTower.AdjustTextObject("title", "bDeconText", 0, new Vector2(257.5,0));
-        //  button close
-        //      image
-        this.menuGroupTower.AddImageObject("title", "closeImg", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("title", "closeImg", 1, 0, new Vector2(-2.5,0));
-        this.menuGroupTower.AdjustImageObject("title", "closeImg", 1, 2, new Vector2(2,1));
-        this.menuGroupTower.AdjustImageObject("title", "closeImg", 1, 3, new Vector2(5, 0.2), false);
-        this.menuGroupTower.GetMenuImageObject("title", "closeImg").width = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "closeImg").height = 55;
-        this.menuGroupTower.GetMenuImageObject("title", "closeImg").onClick = new OnPointerDown(() => { this.SetTowerMenuState(false); });
-        //      text
-        this.menuGroupTower.AddMenuText("title", "closeText", "X");
-        this.menuGroupTower.AdjustTextDisplay("title", "closeText", 0, 50);
-        this.menuGroupTower.AdjustTextObject("title", "closeText", 0, new Vector2(312.5,0));
-        //  content
-        //      object
-        this.menuGroupTower.AddMenuObject("towerName", "background");
-        this.menuGroupTower.AdjustMenuObject("towerName", 0, new Vector2(0,-60));
-        this.menuGroupTower.AdjustMenuObject("towerName", 1, new Vector2(670,60));
-        this.menuGroupTower.AdjustMenuObject("towerName", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustMenuColour("towerName", new Color4(0.2, 0.2, 0.2, 0));
-        //      tower name
-        this.menuGroupTower.AddMenuText("towerName", "towerNameText", "TOWER_NAME");
-        this.menuGroupTower.AdjustTextDisplay("towerName", "towerNameText", 0, 32);
-        this.menuGroupTower.AdjustTextObject("towerName", "towerNameText", 0, new Vector2(0,-30));
-        this.menuGroupTower.AdjustTextObject("towerName", "towerNameText", 1, new Vector2(400,0));
-        this.menuGroupTower.AdjustTextObject("towerName", "towerNameText", 2, new Vector2(1,0));
-        //  content
-        //      object
-        this.menuGroupTower.AddMenuObject("content", "background");
-        this.menuGroupTower.AdjustMenuObject("content", 0, new Vector2(0,-120));
-        this.menuGroupTower.AdjustMenuObject("content", 1, new Vector2(670,240));
-        this.menuGroupTower.AdjustMenuObject("content", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustMenuColour("content", new Color4(0.2, 0.2, 0.2, 0));
-        //desc
-        //      text
-        this.menuGroupTower.AddMenuText("content", "descText", "desc");
-        this.menuGroupTower.AdjustTextDisplay("content", "descText", 0, 18);
-        this.menuGroupTower.AdjustTextObject("content", "descText", 0, new Vector2(0,-10));
-        this.menuGroupTower.AdjustTextObject("content", "descText", 1, new Vector2(375,0));
-        this.menuGroupTower.AdjustTextObject("content", "descText", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustTextObject("content", "descText", 3, new Vector2(1,0));
-        //tower damage 
-        //      text
-        this.menuGroupTower.AddMenuText("content", "dmgLabel", "Damage:");
-        this.menuGroupTower.AdjustTextDisplay("content", "dmgLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "dmgLabel", 0, new Vector2(-220,60));
-        this.menuGroupTower.AdjustTextObject("content", "dmgLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "dmgLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "dmgLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "dmgValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "dmgValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "dmgValue", 0, new Vector2(-220,60));
-        this.menuGroupTower.AdjustTextObject("content", "dmgValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "dmgValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "dmgValue", 3, new Vector2(2,1));
-        //tower pen 
-        //      text
-        this.menuGroupTower.AddMenuText("content", "penLabel", "Pen:");
-        this.menuGroupTower.AdjustTextDisplay("content", "penLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "penLabel", 0, new Vector2(0,60));
-        this.menuGroupTower.AdjustTextObject("content", "penLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "penLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "penLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "penValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "penValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "penValue", 0, new Vector2(0,60));
-        this.menuGroupTower.AdjustTextObject("content", "penValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "penValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "penValue", 3, new Vector2(2,1));
-        //tower rend 
-        //      text
-        this.menuGroupTower.AddMenuText("content", "rendLabel", "Rend:");
-        this.menuGroupTower.AdjustTextDisplay("content", "rendLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rendLabel", 0, new Vector2(220,60));
-        this.menuGroupTower.AdjustTextObject("content", "rendLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rendLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rendLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "rendValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "rendValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rendValue", 0, new Vector2(220,60));
-        this.menuGroupTower.AdjustTextObject("content", "rendValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rendValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rendValue", 3, new Vector2(2,1));
-        //tower range 
-        //      text
-        this.menuGroupTower.AddMenuText("content", "rangeLabel", "Range:");
-        this.menuGroupTower.AdjustTextDisplay("content", "rangeLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rangeLabel", 0, new Vector2(-220,30));
-        this.menuGroupTower.AdjustTextObject("content", "rangeLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rangeLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rangeLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "rangeValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "rangeValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rangeValue", 0, new Vector2(-220,30));
-        this.menuGroupTower.AdjustTextObject("content", "rangeValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rangeValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rangeValue", 3, new Vector2(2,1));
-        //attack speed
-        //      text
-        this.menuGroupTower.AddMenuText("content", "rofLabel", "RoF:");
-        this.menuGroupTower.AdjustTextDisplay("content", "rofLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rofLabel", 0, new Vector2(0,30));
-        this.menuGroupTower.AdjustTextObject("content", "rofLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rofLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rofLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "rofValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "rofValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "rofValue", 0, new Vector2(0,30));
-        this.menuGroupTower.AdjustTextObject("content", "rofValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "rofValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "rofValue", 3, new Vector2(2,1));
-        //effect
-        //      text
-        this.menuGroupTower.AddMenuText("content", "effectLabel", "Effect:");
-        this.menuGroupTower.AdjustTextDisplay("content", "effectLabel", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "effectLabel", 0, new Vector2(220,30));
-        this.menuGroupTower.AdjustTextObject("content", "effectLabel", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "effectLabel", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "effectLabel", 3, new Vector2(0,1));
-        //      value
-        this.menuGroupTower.AddMenuText("content", "effectValue", "###");
-        this.menuGroupTower.AdjustTextDisplay("content", "effectValue", 0, 22);
-        this.menuGroupTower.AdjustTextObject("content", "effectValue", 0, new Vector2(220,30));
-        this.menuGroupTower.AdjustTextObject("content", "effectValue", 1, new Vector2(150,0));
-        this.menuGroupTower.AdjustTextObject("content", "effectValue", 2, new Vector2(1,2));
-        this.menuGroupTower.AdjustTextObject("content", "effectValue", 3, new Vector2(2,1));
-
-        //TOWER BUILDING
-        //      object
-        this.menuGroupTower.AddMenuObject("towerBuilding", "background");
-        this.menuGroupTower.AdjustMenuObject("towerBuilding", 0, new Vector2(0,-360));
-        this.menuGroupTower.AdjustMenuObject("towerBuilding", 1, new Vector2(670,120));
-        this.menuGroupTower.AdjustMenuObject("towerBuilding", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustMenuColour("towerBuilding", new Color4(0.2, 0.2, 0.2, 0));
-        //  button build tower
-        //      object
-        this.menuGroupTower.AddMenuObject("buttonBuild", "towerBuilding");
-        this.menuGroupTower.AdjustMenuObject("buttonBuild", 0, new Vector2(0,0));
-        this.menuGroupTower.AdjustMenuObject("buttonBuild", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("buttonBuild", "Img", 1, 2, true);
-        this.menuGroupTower.AdjustImageObject("buttonBuild", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("buttonBuild", "Img", 1, 3, new Vector2(3,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("buttonBuild", "Img").onClick = new OnPointerDown(() => { this.TowerBuild(); });
-        //      title
-        this.menuGroupTower.AddMenuText("buttonBuild", "TextValue", "BUILD");
-        this.menuGroupTower.AdjustTextDisplay("buttonBuild", "TextValue", 0, 40);
-        this.menuGroupTower.AdjustTextObject("buttonBuild", "TextValue", 0, new Vector2(0,0));
-        //  button next
-        //      object
-        this.menuGroupTower.AddMenuObject("towerNext", "towerBuilding");
-        this.menuGroupTower.AdjustMenuObject("towerNext", 0, new Vector2(200,0));
-        this.menuGroupTower.AdjustMenuObject("towerNext", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("towerNext", "Img", 1, 15, true);
-        this.menuGroupTower.AdjustImageObject("towerNext", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("towerNext", "Img", 1, 3, new Vector2(4,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("towerNext", "Img").onClick = new OnPointerDown(() => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex+1); });
-        //  button prev
-        //      object
-        this.menuGroupTower.AddMenuObject("towerPrev", "towerBuilding");
-        this.menuGroupTower.AdjustMenuObject("towerPrev", 0, new Vector2(-200,0));
-        this.menuGroupTower.AdjustMenuObject("towerPrev", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("towerPrev", "Img", 1, 16, true);
-        this.menuGroupTower.AdjustImageObject("towerPrev", "Img", 1, 2, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("towerPrev", "Img", 1, 3, new Vector2(4,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("towerPrev", "Img").onClick = new OnPointerDown(() => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex-1); });
-
-        //TOWER UPGRADING
-        //      object
-        this.menuGroupTower.AddMenuObject("towerUpgrading", "background");
-        this.menuGroupTower.AdjustMenuObject("towerUpgrading", 0, new Vector2(0,-360));
-        this.menuGroupTower.AdjustMenuObject("towerUpgrading", 1, new Vector2(670,120));
-        this.menuGroupTower.AdjustMenuObject("towerUpgrading", 2, new Vector2(1,0));
-        this.menuGroupTower.AdjustMenuColour("towerUpgrading", new Color4(0.2, 0.2, 0.2, 0));
-        //  button upgrade 0
-        //      object
-        this.menuGroupTower.AddMenuObject("buttonUpgrade0", "towerUpgrading");
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade0", 0, new Vector2(-220,0));
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade0", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("buttonUpgrade0", "Img", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade0", "Img", 1, 4, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade0", "Img", 1, 3, new Vector2(4,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade0", "Img").onClick = new OnPointerDown(() => { this.PurchaseTowerUpgrade(0); });
-        //      title
-        this.menuGroupTower.AddMenuText("buttonUpgrade0", "TextValue", "Upgrade_0\n<COST>");
-        this.menuGroupTower.AdjustTextDisplay("buttonUpgrade0", "TextValue", 0, 14);
-        this.menuGroupTower.AdjustTextObject("buttonUpgrade0", "TextValue", 0, new Vector2(0,0));
-        //      adjustments
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade0", "Img").width = 200;
-        this.menuGroupTower.GetMenuObject("buttonUpgrade0").rect.width = 200;
-        this.menuGroupTower.GetMenuObjectText("buttonUpgrade0", "TextValue").width = 200;
-        //  button upgrade 1
-        //      object
-        this.menuGroupTower.AddMenuObject("buttonUpgrade1", "towerUpgrading");
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade1", 0, new Vector2(0,0));
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade1", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("buttonUpgrade1", "Img", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade1", "Img", 1, 4, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade1", "Img", 1, 3, new Vector2(4,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade1", "Img").onClick = new OnPointerDown(() => { this.PurchaseTowerUpgrade(1); });
-        //      title
-        this.menuGroupTower.AddMenuText("buttonUpgrade1", "TextValue", "Upgrade_1\n<COST>");
-        this.menuGroupTower.AdjustTextDisplay("buttonUpgrade1", "TextValue", 0, 14);
-        this.menuGroupTower.AdjustTextObject("buttonUpgrade1", "TextValue", 0, new Vector2(0,0));
-        //      adjustments
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade1", "Img").width = 200;
-        this.menuGroupTower.GetMenuObject("buttonUpgrade1").rect.width = 200;
-        this.menuGroupTower.GetMenuObjectText("buttonUpgrade1", "TextValue").width = 200;
-        //  button upgrade 2
-        //      object
-        this.menuGroupTower.AddMenuObject("buttonUpgrade2", "towerUpgrading");
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade2", 0, new Vector2(220,0));
-        this.menuGroupTower.AdjustMenuObject("buttonUpgrade2", 2, new Vector2(1,1));
-        //      image
-        this.menuGroupTower.AddImageObject("buttonUpgrade2", "Img", 1, 4, true);
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade2", "Img", 1, 4, new Vector2(1,1));
-        this.menuGroupTower.AdjustImageObject("buttonUpgrade2", "Img", 1, 3, new Vector2(4,0.85), true);
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade2", "Img").onClick = new OnPointerDown(() => { this.PurchaseTowerUpgrade(2); });
-        //      title
-        this.menuGroupTower.AddMenuText("buttonUpgrade2", "TextValue", "Upgrade_2\n<COST>");
-        this.menuGroupTower.AdjustTextDisplay("buttonUpgrade2", "TextValue", 0, 14);
-        this.menuGroupTower.AdjustTextObject("buttonUpgrade2", "TextValue", 0, new Vector2(0,0));
-        //      adjustments
-        this.menuGroupTower.GetMenuImageObject("buttonUpgrade2", "Img").width = 200;
-        this.menuGroupTower.GetMenuObject("buttonUpgrade2").rect.width = 200;
-        this.menuGroupTower.GetMenuObjectText("buttonUpgrade2", "TextValue").width = 200;
-
-
-        //menu off at start
-        this.SetTowerMenuState(false);
+    //updates life count
+    updateLifeCount() 
+    { 
+        //2d
+        this.menuGroupHUD.SetMenuText("hudMain", "TextLife", GameState.PlayerHealth.toString()); 
     }
-    //updates
-    //  sets visibility of tower builder
-    public SetTowerMenuState(state:boolean)
-    {
-        this.menuGroupTower.SetMenuState(state);
+    //updates money count
+    updateMoneyCount() 
+    { 
+        //2d
+        this.menuGroupHUD.SetMenuText("hudMain", "TextMoney", GameState.PlayerMoney.toString()); 
     }
-    //  sets menu display type
-    //      0=build, 1=upgrade
-    public SetTowerMenuDisplayType(type:number)
+    //  update wave count
+    UpdateWaveCount()
     {
-        //set button states
-        this.SetTowerMenuState(true);
-        switch(type)
+        //2d
+        this.menuGroupHUD.SetMenuText("hudMain", "TextWaves", GameState.WaveCur.toString());
+        //3d
+        this.menuGroupMainMenu.SetMenuText("waveOnGoingContainer", "waveLabel", "WAVE: "+GameState.WaveCur.toString()+" / "
+            +GameState.WaveMax.toString());    
+    }
+    //  update enemy count
+    UpdateEnemyCount()
+    {
+        //2d
+        this.menuGroupHUD.SetMenuText("hudEnemy", "TextEnemy", EnemyUnitManager.Instance.enemySizeCur.toString());
+        //3d
+        this.menuGroupMainMenu.SetMenuText("waveOnGoingContainer", "enemyCountLabel", "ENEMIES: "+EnemyUnitManager.Instance.enemySizeCur);
+    }
+    //  update enemy type
+    UpdateEnemyTypes()
+    {
+        //same enemy types
+        if(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0) == EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 1))
         {
-            //build
+            //enemy 0
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyNameLabel0", 
+                EnemyData[EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0)].DisplayName
+            );
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyStatLabel0", 
+                "COUNT: "+(EnemyWaveManager.Instance.GetEnemyUnitCount(GameState.WaveCur, 0)
+                    +EnemyWaveManager.Instance.GetEnemyUnitCount(GameState.WaveCur, 1))
+                +"\nHEALTH: "+EnemyUnitObject.CalcHealth(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0), GameState.WaveCur)
+                +"\nARMOUR: "+EnemyUnitObject.CalcArmour(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0), GameState.WaveCur)
+            );
+            
+            //enemy 1
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyNameLabel1", "");
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyStatLabel1", "");
+        }
+        //different enemy types
+        else
+        {
+            //enemy 0
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyNameLabel0", 
+                EnemyData[EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0)].DisplayName);
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyStatLabel0", 
+                "COUNT: "+EnemyWaveManager.Instance.GetEnemyUnitCount(GameState.WaveCur, 0)
+                +"\nHEALTH: "+EnemyUnitObject.CalcHealth(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0), GameState.WaveCur)
+                +"\nARMOUR: "+EnemyUnitObject.CalcArmour(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 0), GameState.WaveCur)
+            );
+            
+            //enemy 1
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyNameLabel1", 
+                EnemyData[EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 1)].DisplayName);
+            this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "enemyStatLabel1", 
+                "COUNT: "+EnemyWaveManager.Instance.GetEnemyUnitCount(GameState.WaveCur, 1)
+                +"\nHEALTH: "+EnemyUnitObject.CalcHealth(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 1), GameState.WaveCur)
+                +"\nARMOUR: "+EnemyUnitObject.CalcArmour(EnemyWaveManager.Instance.GetEnemyUnitType(GameState.WaveCur, 1), GameState.WaveCur)
+            );
+        }
+
+    }
+    //  change menu state
+    UpdateMainMenuState(state:number, result:boolean=true)
+    {
+        //disable all menus by default
+        //  2d
+        this.menuGroupHUD.GetMenuObject("hudEnemy").rect.visible = false;
+        //  3d
+        this.menuGroupMainMenu.GetMenuObject("gameStartContainer").SetObjectState(false);
+        this.menuGroupMainMenu.GetMenuObject("waveBreakContainer").SetObjectState(false);
+        this.menuGroupMainMenu.GetMenuObject("waveOnGoingContainer").SetObjectState(false);
+        this.menuGroupMainMenu.GetMenuObject("gameEndContainer").SetObjectState(false);
+
+        //set new menu state
+        switch(state)
+        {
+            //game start
             case 0:
-                this.menuGroupTower.GetMenuObjectText("title", "Text").value = "BUILD TOWER";
-                this.menuGroupTower.GetMenuObject("towerBuilding").rect.visible = true;
-                this.menuGroupTower.GetMenuObject("towerUpgrading").rect.visible = false;
-                //update
-                //this.UpdateTowerBuilderDisplay(0);
+                this.menuGroupMainMenu.GetMenuObject("gameStartContainer").SetObjectState(true);
             break;
-            //upgrade
+            //between wave
             case 1:
-                this.menuGroupTower.GetMenuObjectText("title", "Text").value = "UPGRADE TOWER";
-                this.menuGroupTower.GetMenuObject("towerBuilding").rect.visible = false;
-                this.menuGroupTower.GetMenuObject("towerUpgrading").rect.visible = true;
+                //update wave count
+                this.menuGroupMainMenu.SetMenuText("waveBreakContainer", "waveLabel", "WAVE: "+(GameState.WaveCur+1)+" / "
+                    +GameState.WaveMax.toString());
+                //display enemy types in wave
+                this.UpdateEnemyTypes();
+                //enable menu
+                this.menuGroupMainMenu.GetMenuObject("waveBreakContainer").SetObjectState(true);
+            break;
+            //on-going wave
+            case 2:
+                //update wave count
+                this.menuGroupMainMenu.SetMenuText("waveOnGoingContainer", "waveLabel", "WAVE: "+(GameState.WaveCur+1)+" / "
+                    +GameState.WaveMax.toString());
+                //redraw enemy count
+                GameMenu.Instance.UpdateEnemyCount();
+                this.menuGroupHUD.GetMenuObject("hudEnemy").rect.visible = true;
+                //enable menu
+                this.menuGroupMainMenu.GetMenuObject("waveOnGoingContainer").SetObjectState(true);
+            break;
+            //game over summary
+            case 3:
+                this.menuGroupMainMenu.GetMenuObject("gameEndContainer").SetObjectState(true);
+                //process based on win/loss
+                if(result)
+                {
+                    this.menuGroupMainMenu.SetMenuText("gameEndContainer", "menuLabel", "GAME OVER: VICTORY!");
+                }
+                else
+                {
+                    this.menuGroupMainMenu.SetMenuText("gameEndContainer", "menuLabel", "GAME OVER: DEFEAT!");
+                }
             break;
         }
     }
-    //  redraws tower builder, displaying the tower def of given index
-    public UpdateTowerBuilderDisplay(index:number)
-    {
-        this.SetTowerMenuDisplayType(0);
-
-        //leash value to valid targets, with wrap around
-        if(index < 0) { this.towerDefinitionIndex = dataTowers.length-1; }
-        else if(index >= dataTowers.length) { this.towerDefinitionIndex = 0; }
-        else { this.towerDefinitionIndex = index; }
-
-        if(GameState.debuggingTower) { log("displaying def "+this.towerDefinitionIndex.toString()+" in build menu"); }
-
-        //update showcase details
-        this.menuGroupTower.GetMenuObjectText("towerName", "towerNameText").value = dataTowers[this.towerDefinitionIndex].DisplayName;
-        this.menuGroupTower.GetMenuObjectText("content", "descText").value = "COST: "+dataTowers[this.towerDefinitionIndex].ValueCost.toString()+"\n\n"+dataTowers[this.towerDefinitionIndex].DisplayDesc;
-        this.menuGroupTower.GetMenuObjectText("content", "dmgValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackDamage.toString();
-        this.menuGroupTower.GetMenuObjectText("content", "penValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackPenetration.toString();
-        this.menuGroupTower.GetMenuObjectText("content", "rendValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackRend.toString();
-        this.menuGroupTower.GetMenuObjectText("content", "rangeValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackRange.toString();
-        this.menuGroupTower.GetMenuObjectText("content", "rofValue").value = dataTowers[this.towerDefinitionIndex].ValueAttackSpeed.toString();
-    }
-    //  redraws tower upgrader, displaying the tower foundation of the given location
-    selectedTowerData:undefined|TowerFoundation;
-    public UpdateTowerUpgraderState(index:number)
-    {
-        this.SetTowerMenuDisplayType(1);
-
-        this.selectedTowerData = TowerManager.Instance.TowerFoundationDict.getItem(index.toString());
-        if(this.selectedTowerData != undefined)
-        {
-            if(GameState.debuggingTower) { log("displaying def "+this.towerDefinitionIndex.toString()+" in upgrade menu"); }
-
-            //update showcase details
-            this.menuGroupTower.GetMenuObjectText("towerName", "towerNameText").value = dataTowers[this.selectedTowerData.TowerDef].DisplayName;
-            this.menuGroupTower.GetMenuObjectText("content", "descText").value = dataTowers[this.selectedTowerData.TowerDef].DisplayDesc;
-            this.menuGroupTower.GetMenuObjectText("content", "dmgValue").value = this.selectedTowerData.TowerSystem.attackDamage.toString();
-            this.menuGroupTower.GetMenuObjectText("content", "penValue").value = this.selectedTowerData.TowerSystem.attackPen.toString();
-            this.menuGroupTower.GetMenuObjectText("content", "rendValue").value = this.selectedTowerData.TowerSystem.attackRend.toString();
-            this.menuGroupTower.GetMenuObjectText("content", "rangeValue").value = this.selectedTowerData.TowerSystem.attackRange.toString();
-            this.menuGroupTower.GetMenuObjectText("content", "rofValue").value = this.selectedTowerData.TowerSystem.attackSpeed.toString();
-
-            //update buttons
-            for(var i:number = 0; i<dataTowers[this.selectedTowerData.TowerDef].Upgrades.length; i++)
-            {
-                this.menuGroupTower.GetMenuObjectText("buttonUpgrade"+i.toString(), "TextValue").value = 
-                    dataTowers[this.selectedTowerData.TowerDef].Upgrades[i][3] + " " + dataTowers[this.selectedTowerData.TowerDef].Upgrades[i][0] 
-                    + "\nCOST: " +dataTowers[this.selectedTowerData.TowerDef].Upgrades[i][1] + "\n"
-                    + this.selectedTowerData.TowerUpgrades[i]+" / "+dataTowers[this.selectedTowerData.TowerDef].Upgrades[i][2];
-            }
-        }
-        
-    }
-    //  purchases upgrade for a given tower
-    public PurchaseTowerUpgrade(index:number)
-    {
-        if(this.selectedTowerData != null)
-        {
-            //ensure upgrade is available and player has money
-            if(this.selectedTowerData.TowerUpgrades[index] >= dataTowers[this.selectedTowerData.TowerDef].Upgrades[index][2]
-                || dataTowers[this.selectedTowerData.TowerDef].Upgrades[index][1] > GameState.PlayerMoney)
-            {
-                return;
-            }
-
-            //remove money
-            GameState.PlayerMoney -= +dataTowers[this.selectedTowerData.TowerDef].Upgrades[index][1];
-            this.updateMoneyCount();
-
-            //apply upgrade
-            this.selectedTowerData.ApplyUpgrade(index);
-
-            //update tower display
-            this.UpdateTowerUpgraderState(this.selectedTowerData.Index);
-        }
-    }
-*/
-
+    
     //3D tower builder view
     menuGroupTower:MenuGroup3D;
     towerDefinitionIndex:number = 0;    //selected tower def
-    //  callbacks
+    
+    //callbacks
+    //  build tower
     public TowerBuild:() => void = this.towerBuild;
     private towerBuild() { log("game menu callback not set - build tower"); }
+    //  deconstruct tower
+    public TowerDeconstruct:() => void = this.towerDeconstruct;
+    private towerDeconstruct() { log("game menu callback not set - deconstruct tower"); }
+    
     //currently selected tower foundation
     private selectedTowerFoundation: undefined|TowerFoundation;
-    //  setup
+    
+    //setup
     private menuTowerSetup()
     {
         //create overhead object
@@ -759,7 +585,7 @@ export class GameMenu2D
 
         //TOWER DETAILS
         //  selected tower display object
-        this.menuGroupTower.AddMenuObject("selectionInfoFrame", 4, "menuOffset");
+        this.menuGroupTower.AddMenuObject("selectionInfoFrame", 2, "menuOffset");
         this.menuGroupTower.AdjustMenuObject("selectionInfoFrame", 0, new Vector3(0,0,0));
         this.menuGroupTower.AdjustMenuObject("selectionInfoFrame", 1, new Vector3(1,1,1));
         //  selected tower display object
@@ -768,13 +594,13 @@ export class GameMenu2D
         this.menuGroupTower.AdjustMenuObject("selectionInfo", 1, new Vector3(1,1,1));
         //  label header text
         this.menuGroupTower.AddMenuText("selectionInfo", "menuLabel", "MENU LABEL");
-        this.menuGroupTower.AdjustTextObject("selectionInfo", "menuLabel", 0, new Vector3(0,0.39,0));
-        this.menuGroupTower.AdjustTextObject("selectionInfo", "menuLabel", 1, new Vector3(0.25,0.25,0.025));
-        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "menuLabel", 0, 5);
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "menuLabel", 0, new Vector3(0,0.65,0));
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "menuLabel", 0, 4);
 
         //  deconstruct tower object
-        this.menuGroupTower.AddMenuObject("interactDeconstruct", 1, "selectionInfo");
-        this.menuGroupTower.AdjustMenuObject("interactDeconstruct", 0, new Vector3(-0.86,0.36,0));
+        this.menuGroupTower.AddMenuObject("interactDeconstruct", 5, "selectionInfo");
+        this.menuGroupTower.AdjustMenuObject("interactDeconstruct", 0, new Vector3(-1.0,0.65,0));
         this.menuGroupTower.AdjustMenuObject("interactDeconstruct", 1, new Vector3(0.15,0.15,0.15));
         this.menuGroupTower.GetMenuObject("interactDeconstruct").addComponent
         (
@@ -782,28 +608,21 @@ export class GameMenu2D
             new OnPointerDown
             (
                 (e) => 
-                { 
-                    //if tower is built
-                    if(this.selectedTowerFoundation != undefined && this.selectedTowerFoundation.TowerDef != -1)
-                    { 
-                        //refund tower
-                        TowerManager.Instance.ClearTower(this.selectedTowerFoundation.Index, true); 
-                        //redraw display
-                        this.UpdateTowerBuilderDisplay(this.selectedTowerFoundation.Index);
-                    }
+                {
+                    this.TowerDeconstruct();
                 },
                 { button: ActionButton.ANY, showFeedback: true, hoverText: "Deconstruct Tower", distance: 16 }
             )
         );
         //  deconstruction label
-        this.menuGroupTower.AddMenuText("interactDeconstruct", "buttonLabel", "D");
+        this.menuGroupTower.AddMenuText("interactDeconstruct", "buttonLabel", "REFUND");
         this.menuGroupTower.AdjustTextObject("interactDeconstruct", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactDeconstruct", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactDeconstruct", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactDeconstruct", "buttonLabel", 0, 5);
 
         //  toggle tower range object
-        this.menuGroupTower.AddMenuObject("interactToggleRange", 1, "selectionInfo");
-        this.menuGroupTower.AdjustMenuObject("interactToggleRange", 0, new Vector3(0.69,0.36,0));
+        this.menuGroupTower.AddMenuObject("interactToggleRange", 5, "selectionInfo");
+        this.menuGroupTower.AdjustMenuObject("interactToggleRange", 0, new Vector3(1.0,0.50,0));
         this.menuGroupTower.AdjustMenuObject("interactToggleRange", 1, new Vector3(0.15,0.15,0.15));
         this.menuGroupTower.GetMenuObject("interactToggleRange").addComponent
         (
@@ -811,52 +630,57 @@ export class GameMenu2D
             new OnPointerDown
             (
                 (e) => 
-                { 
+                {
                     //if tower is built
-                    if(this.selectedTowerFoundation != undefined && this.selectedTowerFoundation.TowerDef != -1)
+                    if(this.selectedTowerFoundation != undefined && this.selectedTowerFoundation.TowerFrame.TowerDef != -1)
                     {
-                        this.selectedTowerFoundation.ToggleRangeIndicator(); 
+                        this.selectedTowerFoundation.TowerFrame.ToggleRangeIndicator(); 
                     }
                 },
                 { button: ActionButton.ANY, showFeedback: true, hoverText: "Toggle Range Visibility", distance: 16 }
             )
         );
         //  range label
-        this.menuGroupTower.AddMenuText("interactToggleRange", "buttonLabel", "R");
+        this.menuGroupTower.AddMenuText("interactToggleRange", "buttonLabel", "RANGE");
         this.menuGroupTower.AdjustTextObject("interactToggleRange", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactToggleRange", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactToggleRange", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactToggleRange", "buttonLabel", 0, 5);
 
         //  close tower menu
-        this.menuGroupTower.AddMenuObject("interactClose", 1, "selectionInfo");
-        this.menuGroupTower.AdjustMenuObject("interactClose", 0, new Vector3(0.86,0.36,0));
+        this.menuGroupTower.AddMenuObject("interactClose", 5, "selectionInfo");
+        this.menuGroupTower.AdjustMenuObject("interactClose", 0, new Vector3(1,0.65,0));
         this.menuGroupTower.AdjustMenuObject("interactClose", 1, new Vector3(0.15,0.15,0.15));
         this.menuGroupTower.GetMenuObject("interactClose").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
-                (e) => { this.SetTowerMenuState(false); },
+                (e) => 
+                { 
+                    this.SetTowerMenuState(false); 
+                },
                 { button: ActionButton.ANY, showFeedback: true, hoverText: "Close Menu", distance: 16 }
             )
         );
         //  close label
-        this.menuGroupTower.AddMenuText("interactClose", "buttonLabel", "X");
+        this.menuGroupTower.AddMenuText("interactClose", "buttonLabel", "CLOSE");
         this.menuGroupTower.AdjustTextObject("interactClose", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactClose", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactClose", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactClose", "buttonLabel", 0, 5);
 
         //  tower name
         this.menuGroupTower.AddMenuText("selectionInfo", "towerNameText", "TOWER_NAME");
-        this.menuGroupTower.AdjustTextObject("selectionInfo", "towerNameText", 0, new Vector3(0,0.27,0));
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "towerNameText", 0, new Vector3(0,0.4,0));
         this.menuGroupTower.AdjustTextObject("selectionInfo", "towerNameText", 1, new Vector3(0.25,0.25,0.25));
-        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "towerNameText", 0, 4);
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "towerNameText", 0, 6);
         //  tower desc
         this.menuGroupTower.AddMenuText("selectionInfo", "descText", "TOWER_DESC");
-        this.menuGroupTower.AdjustTextObject("selectionInfo", "descText", 0, new Vector3(0,0.2,0));
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "descText", 0, new Vector3(0,0.3,0));
         this.menuGroupTower.AdjustTextObject("selectionInfo", "descText", 1, new Vector3(0.25,0.25,0.25));
-        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "descText", 0, 3);
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "descText", 0, 4);
         this.menuGroupTower.AdjustTextDisplay("selectionInfo", "descText", 2, 0);
+        this.menuGroupTower.GetMenuObjectText("selectionInfo", "descText").getComponent(TextShape).width = 10;
+        this.menuGroupTower.GetMenuObjectText("selectionInfo", "descText").getComponent(TextShape).textWrapping = true;
         //  tower damage
         //      text
         this.menuGroupTower.AddMenuText("selectionInfo", "dmgLabel", "DAMAGE:");
@@ -935,16 +759,27 @@ export class GameMenu2D
         this.menuGroupTower.AdjustTextObject("selectionInfo", "effectValue", 1, new Vector3(0.25,0.25,0.25));
         this.menuGroupTower.AdjustTextDisplay("selectionInfo", "effectValue", 0, 3);
         this.menuGroupTower.AdjustTextDisplay("selectionInfo", "effectValue", 1, 0);
+        //  tower targeting type
+        //      text
+        this.menuGroupTower.AddMenuText("selectionInfo", "targetLabel", "TARGETING:");
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "targetLabel", 0, new Vector3(-0.21,-0.55,0));
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "targetLabel", 1, new Vector3(0.25,0.25,0.25));
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "targetLabel", 0, 3);
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "targetLabel", 1, 2);
+        //      value
+        this.menuGroupTower.AddMenuText("selectionInfo", "targetValue", "[TARGETING TYPE]");
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "targetValue", 0, new Vector3(-0.19,-0.55,0));
+        this.menuGroupTower.AdjustTextObject("selectionInfo", "targetValue", 1, new Vector3(0.25,0.25,0.25));
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "targetValue", 0, 3);
+        this.menuGroupTower.AdjustTextDisplay("selectionInfo", "targetValue", 1, 0);
 
-        //CONTROL MENU
-        //  TOWER CONSTRUCTION
-        //  selected tower display object
-        this.menuGroupTower.AddMenuObject("interactionPanel", 4, "menuOffset");
-        this.menuGroupTower.AdjustMenuObject("interactionPanel", 0, new Vector3(0,-0.68,-0.21));
-        this.menuGroupTower.AdjustMenuObject("interactionPanel", 1, new Vector3(0.5,0.5,0.5));
-        this.menuGroupTower.AdjustMenuObject("interactionPanel", 2, new Vector3(45,0,0));
+        //TOWER DEF SELECTION MENU
+        //  def selection display object
+        this.menuGroupTower.AddMenuObject("interactionPanelBuild", 0, "menuOffset");
+        this.menuGroupTower.AdjustMenuObject("interactionPanelBuild", 0, new Vector3(0,-0.65,));
+        this.menuGroupTower.AdjustMenuObject("interactionPanelBuild", 1, new Vector3(0.5,0.5,0.5));
         //  build selected tower
-        this.menuGroupTower.AddMenuObject("interactionBuild", 1, "interactionPanel");
+        this.menuGroupTower.AddMenuObject("interactionBuild", 4, "interactionPanelBuild");
         this.menuGroupTower.AdjustMenuObject("interactionBuild", 0, new Vector3(0,0,0));
         this.menuGroupTower.AdjustMenuObject("interactionBuild", 1, new Vector3(0.3,0.3,0.3));
         this.menuGroupTower.GetMenuObject("interactionBuild").addComponent
@@ -961,7 +796,7 @@ export class GameMenu2D
                         return;
                     }
                     //
-                    if(this.selectedTowerFoundation.TowerDef != -1)
+                    if(this.selectedTowerFoundation.TowerFrame.TowerDef != -1)
                     {
                         log("Game Menu - ERROR: attempting to build tower on tower foundation that already has a constructed tower");
                         return;
@@ -972,14 +807,14 @@ export class GameMenu2D
                 { button: ActionButton.ANY, showFeedback: true, hoverText: "Build Tower", distance: 16 }
             )
         );
-        //      label
-        this.menuGroupTower.AddMenuText("interactionBuild", "buttonLabel", "B");
+        //  label
+        this.menuGroupTower.AddMenuText("interactionBuild", "buttonLabel", "BUILD");
         this.menuGroupTower.AdjustTextObject("interactionBuild", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactionBuild", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactionBuild", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactionBuild", "buttonLabel", 0, 6);
         //  build selected tower
-        this.menuGroupTower.AddMenuObject("interactionDisplayNext", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("interactionDisplayNext", 0, new Vector3(0.45,0,0));
+        this.menuGroupTower.AddMenuObject("interactionDisplayNext", 4, "interactionPanelBuild");
+        this.menuGroupTower.AdjustMenuObject("interactionDisplayNext", 0, new Vector3(0.85,0,0));
         this.menuGroupTower.AdjustMenuObject("interactionDisplayNext", 1, new Vector3(0.3,0.3,0.3));
         this.menuGroupTower.GetMenuObject("interactionDisplayNext").addComponent
         (
@@ -987,17 +822,17 @@ export class GameMenu2D
             new OnPointerDown
             (
                 (e) => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex+1); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Next Tower", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Next Tower Type", distance: 16 }
             )
         );
-        //      label
-        this.menuGroupTower.AddMenuText("interactionDisplayNext", "buttonLabel", ">");
+        //  label
+        this.menuGroupTower.AddMenuText("interactionDisplayNext", "buttonLabel", "NEXT");
         this.menuGroupTower.AdjustTextObject("interactionDisplayNext", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactionDisplayNext", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactionDisplayNext", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactionDisplayNext", "buttonLabel", 0, 6);
         //  build selected tower
-        this.menuGroupTower.AddMenuObject("interactionDisplayPrev", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("interactionDisplayPrev", 0, new Vector3(-0.45,0,0));
+        this.menuGroupTower.AddMenuObject("interactionDisplayPrev", 4, "interactionPanelBuild");
+        this.menuGroupTower.AdjustMenuObject("interactionDisplayPrev", 0, new Vector3(-0.85,0,0));
         this.menuGroupTower.AdjustMenuObject("interactionDisplayPrev", 1, new Vector3(0.3,0.3,0.3));
         this.menuGroupTower.GetMenuObject("interactionDisplayPrev").addComponent
         (
@@ -1005,123 +840,275 @@ export class GameMenu2D
             new OnPointerDown
             (
                 (e) => { this.UpdateTowerBuilderDisplay(this.towerDefinitionIndex-1); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Previous Tower", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Previous Tower Type", distance: 16 }
             )
         );
-        //      label
-        this.menuGroupTower.AddMenuText("interactionDisplayPrev", "buttonLabel", "<");
+        //  label
+        this.menuGroupTower.AddMenuText("interactionDisplayPrev", "buttonLabel", "PREV");
         this.menuGroupTower.AdjustTextObject("interactionDisplayPrev", "buttonLabel", 0, new Vector3(0,0,-0.04));
         this.menuGroupTower.AdjustTextObject("interactionDisplayPrev", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("interactionDisplayPrev", "buttonLabel", 0, 8);
+        this.menuGroupTower.AdjustTextDisplay("interactionDisplayPrev", "buttonLabel", 0, 6);
 
-        //  TOWER UPGRADE/MANAGEMENT
+
+        //TOWER UPGRADE MENU
+        //  tower upgrade display object
+        this.menuGroupTower.AddMenuObject("interactionPanelUpgrade", 0, "menuOffset");
+        this.menuGroupTower.AdjustMenuObject("interactionPanelUpgrade", 0, new Vector3(-1.67,0,-0.37));
+        this.menuGroupTower.AdjustMenuObject("interactionPanelUpgrade", 1, new Vector3(0.5,0.5,0.5));
+        this.menuGroupTower.AdjustMenuObject("interactionPanelUpgrade", 2, new Vector3(0,-45,0));
+        //  tower upgrade display object
+        this.menuGroupTower.AddMenuObject("menuBackground", 2, "interactionPanelUpgrade");
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 0, new Vector3(0,0,0));
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 1, new Vector3(1,1,1));
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 2, new Vector3(0,0,90));
+        //  label header text
+        this.menuGroupTower.AddMenuText("interactionPanelUpgrade", "menuLabel", "UPGRADES");
+        this.menuGroupTower.AdjustTextObject("interactionPanelUpgrade", "menuLabel", 0, new Vector3(0,1.05,0));
+        this.menuGroupTower.AdjustTextObject("interactionPanelUpgrade", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupTower.AdjustTextDisplay("interactionPanelUpgrade", "menuLabel", 0, 6);
+        
         //  upgrade 0
         //      button
-        this.menuGroupTower.AddMenuObject("upgradeButton0", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("upgradeButton0", 0, new Vector3(-0.865,0.36,0));
-        this.menuGroupTower.AdjustMenuObject("upgradeButton0", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupTower.AddMenuObject("upgradeButton0", 5, "interactionPanelUpgrade");
+        this.menuGroupTower.AdjustMenuObject("upgradeButton0", 0, new Vector3(0,0.65,0));
+        this.menuGroupTower.AdjustMenuObject("upgradeButton0", 1, new Vector3(0.55,0.45,0.45));
         this.menuGroupTower.GetMenuObject("upgradeButton0").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
                 (e) => { this.PurchaseTowerUpgrade(0); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade 1", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade", distance: 16 }
             )
         );
         //      label
-        this.menuGroupTower.AddMenuText("upgradeButton0", "buttonLabel", "1");
-        this.menuGroupTower.AdjustTextObject("upgradeButton0", "buttonLabel", 0, new Vector3(0,0,-0.04));
-        this.menuGroupTower.AdjustTextObject("upgradeButton0", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton0", "buttonLabel", 0, 8);
-        //      labels
         this.menuGroupTower.AddMenuText("upgradeButton0", "upgradeLabel", "PURCHASED:           COST:");
-        this.menuGroupTower.AdjustTextObject("upgradeButton0", "upgradeLabel", 0, new Vector3(0.75,0,0));
-        this.menuGroupTower.AdjustTextObject("upgradeButton0", "upgradeLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton0", "upgradeLabel", 0, 5);
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton0", "upgradeLabel", 1, 0);
+        this.menuGroupTower.AdjustTextObject("upgradeButton0", "upgradeLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("upgradeButton0", "upgradeLabel", 1, new Vector3(0.818,1,1));
+        this.menuGroupTower.AdjustTextDisplay("upgradeButton0", "upgradeLabel", 0, 2);
 
         //  upgrade 1
         //      button
-        this.menuGroupTower.AddMenuObject("upgradeButton1", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("upgradeButton1", 0, new Vector3(-0.865,0.12,0));
-        this.menuGroupTower.AdjustMenuObject("upgradeButton1", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupTower.AddMenuObject("upgradeButton1", 5, "interactionPanelUpgrade");
+        this.menuGroupTower.AdjustMenuObject("upgradeButton1", 0, new Vector3(0,0.1,0));
+        this.menuGroupTower.AdjustMenuObject("upgradeButton1", 1, new Vector3(0.55,0.45,0.45));
         this.menuGroupTower.GetMenuObject("upgradeButton1").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
                 (e) => { this.PurchaseTowerUpgrade(1); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade 2", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade", distance: 16 }
             )
         );
         //      label
-        this.menuGroupTower.AddMenuText("upgradeButton1", "buttonLabel", "2");
-        this.menuGroupTower.AdjustTextObject("upgradeButton1", "buttonLabel", 0, new Vector3(0,0,-0.04));
-        this.menuGroupTower.AdjustTextObject("upgradeButton1", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton1", "buttonLabel", 0, 8);
-        //      labels
-        this.menuGroupTower.AddMenuText("upgradeButton1", "upgradeLabel", "UPGRADE_LABEL");
-        this.menuGroupTower.AdjustTextObject("upgradeButton1", "upgradeLabel", 0, new Vector3(0.75,0,0));
-        this.menuGroupTower.AdjustTextObject("upgradeButton1", "upgradeLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton1", "upgradeLabel", 0, 5);
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton1", "upgradeLabel", 1, 0);
+        this.menuGroupTower.AddMenuText("upgradeButton1", "upgradeLabel", "PURCHASED:           COST:");
+        this.menuGroupTower.AdjustTextObject("upgradeButton1", "upgradeLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("upgradeButton1", "upgradeLabel", 1, new Vector3(0.818,1,1));
+        this.menuGroupTower.AdjustTextDisplay("upgradeButton1", "upgradeLabel", 0, 2);
 
         //  upgrade 2
         //      button
-        this.menuGroupTower.AddMenuObject("upgradeButton2", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("upgradeButton2", 0, new Vector3(-0.865,-0.12,0));
-        this.menuGroupTower.AdjustMenuObject("upgradeButton2", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupTower.AddMenuObject("upgradeButton2", 5, "interactionPanelUpgrade");
+        this.menuGroupTower.AdjustMenuObject("upgradeButton2", 0, new Vector3(0,-0.45,0));
+        this.menuGroupTower.AdjustMenuObject("upgradeButton2", 1, new Vector3(0.55,0.45,0.45));
         this.menuGroupTower.GetMenuObject("upgradeButton2").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
                 (e) => { this.PurchaseTowerUpgrade(2); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade 3", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade", distance: 16 }
             )
         );
         //      label
-        this.menuGroupTower.AddMenuText("upgradeButton2", "buttonLabel", "3");
-        this.menuGroupTower.AdjustTextObject("upgradeButton2", "buttonLabel", 0, new Vector3(0,0,-0.04));
-        this.menuGroupTower.AdjustTextObject("upgradeButton2", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton2", "buttonLabel", 0, 8);
-        //      labels
-        this.menuGroupTower.AddMenuText("upgradeButton2", "upgradeLabel", "UPGRADE_LABEL");
-        this.menuGroupTower.AdjustTextObject("upgradeButton2", "upgradeLabel", 0, new Vector3(0.75,0,0));
-        this.menuGroupTower.AdjustTextObject("upgradeButton2", "upgradeLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton2", "upgradeLabel", 0, 5);
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton2", "upgradeLabel", 1, 0);
+        this.menuGroupTower.AddMenuText("upgradeButton2", "upgradeLabel", "PURCHASED:           COST:");
+        this.menuGroupTower.AdjustTextObject("upgradeButton2", "upgradeLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("upgradeButton2", "upgradeLabel", 1, new Vector3(0.818,1,1));
+        this.menuGroupTower.AdjustTextDisplay("upgradeButton2", "upgradeLabel", 0, 2);
 
         //  upgrade 3
         //      button
-        this.menuGroupTower.AddMenuObject("upgradeButton3", 1, "interactionPanel");
-        this.menuGroupTower.AdjustMenuObject("upgradeButton3", 0, new Vector3(-0.865,-0.36,0));
-        this.menuGroupTower.AdjustMenuObject("upgradeButton3", 1, new Vector3(0.15,0.15,0.15));
+        this.menuGroupTower.AddMenuObject("upgradeButton3", 5, "interactionPanelUpgrade");
+        this.menuGroupTower.AdjustMenuObject("upgradeButton3", 0, new Vector3(0,-1.0,0));
+        this.menuGroupTower.AdjustMenuObject("upgradeButton3", 1, new Vector3(0.55,0.45,0.45));
         this.menuGroupTower.GetMenuObject("upgradeButton3").addComponent
         (
             //add click action listener
             new OnPointerDown
             (
                 (e) => { this.PurchaseTowerUpgrade(3); },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade 4", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Buy Upgrade", distance: 16 }
             )
         );
         //      label
-        this.menuGroupTower.AddMenuText("upgradeButton3", "buttonLabel", "4");
-        this.menuGroupTower.AdjustTextObject("upgradeButton3", "buttonLabel", 0, new Vector3(0,0,-0.04));
-        this.menuGroupTower.AdjustTextObject("upgradeButton3", "buttonLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton3", "buttonLabel", 0, 8);
-        //      labels
-        this.menuGroupTower.AddMenuText("upgradeButton3", "upgradeLabel", "UPGRADE_LABEL");
-        this.menuGroupTower.AdjustTextObject("upgradeButton3", "upgradeLabel", 0, new Vector3(0.75,0,0));
-        this.menuGroupTower.AdjustTextObject("upgradeButton3", "upgradeLabel", 1, new Vector3(1,1,1));
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton3", "upgradeLabel", 0, 5);
-        this.menuGroupTower.AdjustTextDisplay("upgradeButton3", "upgradeLabel", 1, 0);
+        this.menuGroupTower.AddMenuText("upgradeButton3", "upgradeLabel", "PURCHASED:           COST:");
+        this.menuGroupTower.AdjustTextObject("upgradeButton3", "upgradeLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("upgradeButton3", "upgradeLabel", 1, new Vector3(0.818,1,1));
+        this.menuGroupTower.AdjustTextDisplay("upgradeButton3", "upgradeLabel", 0, 2);
+        
+
+        //TOWER TARGETING MENU
+        //  tower target display object
+        this.menuGroupTower.AddMenuObject("interactionPanelTarget", 0, "menuOffset");
+        this.menuGroupTower.AdjustMenuObject("interactionPanelTarget", 0, new Vector3(1.67,0,-0.37));
+        this.menuGroupTower.AdjustMenuObject("interactionPanelTarget", 1, new Vector3(0.5,0.5,0.5));
+        this.menuGroupTower.AdjustMenuObject("interactionPanelTarget", 2, new Vector3(0,45,0));
+        //  tower upgrade display object
+        this.menuGroupTower.AddMenuObject("menuBackground", 2, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 0, new Vector3(0,0,0));
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 1, new Vector3(1,1,1));
+        this.menuGroupTower.AdjustMenuObject("menuBackground", 2, new Vector3(0,0,90));
+        //  label header text
+        this.menuGroupTower.AddMenuText("interactionPanelTarget", "menuLabel", "TARGETING");
+        this.menuGroupTower.AdjustTextObject("interactionPanelTarget", "menuLabel", 0, new Vector3(0,1.05,0));
+        this.menuGroupTower.AdjustTextObject("interactionPanelTarget", "menuLabel", 1, new Vector3(0.4,0.4,1));
+        this.menuGroupTower.AdjustTextDisplay("interactionPanelTarget", "menuLabel", 0, 6);
+
+        //  targeting type - pathing furthest
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonLaneFurthest", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonLaneFurthest", 0, new Vector3(0,0.7,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonLaneFurthest", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonLaneFurthest").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(0); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Furthest Down Lane", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonLaneFurthest", "targetLabel", "FURTHEST DOWN LANE");
+        this.menuGroupTower.AdjustTextObject("tarButtonLaneFurthest", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonLaneFurthest", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonLaneFurthest", "targetLabel", 0, 2);
+
+        //  targeting type - health value high
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonHealthValueHigh", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthValueHigh", 0, new Vector3(0,0.4,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthValueHigh", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonHealthValueHigh").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(1); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Highest Health Value", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonHealthValueHigh", "targetLabel", "HIGHEST HEALTH VALUE");
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthValueHigh", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthValueHigh", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonHealthValueHigh", "targetLabel", 0, 2);
+
+        //  targeting type - health value low
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonHealthValueLowest", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthValueLowest", 0, new Vector3(0,0.1,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthValueLowest", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonHealthValueLowest").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(2); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Lowest Health Value", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonHealthValueLowest", "targetLabel", "LOWEST HEALTH VALUE");
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthValueLowest", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthValueLowest", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonHealthValueLowest", "targetLabel", 0, 2);
+
+        //  targeting type - health % high
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonHealthPercentHigh", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthPercentHigh", 0, new Vector3(0,-0.2,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthPercentHigh", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonHealthPercentHigh").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(3); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Highest Health %", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonHealthPercentHigh", "targetLabel", "HIGHEST HEALTH %");
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthPercentHigh", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthPercentHigh", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonHealthPercentHigh", "targetLabel", 0, 2);
+
+        //  targeting type - health % low
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonHealthPercentLow", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthPercentLow", 0, new Vector3(0,-0.5,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonHealthPercentLow", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonHealthPercentLow").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(4); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Lowest Health %", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonHealthPercentLow", "targetLabel", "LOWEST HEALTH %");
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthPercentLow", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonHealthPercentLow", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonHealthPercentLow", "targetLabel", 0, 2);
+
+        //  targeting type - armour high
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonArmourHigh", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonArmourHigh", 0, new Vector3(0,-0.8,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonArmourHigh", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonArmourHigh").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(5); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Highest Armour", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonArmourHigh", "targetLabel", "HIGHEST ARMOUR VALUE");
+        this.menuGroupTower.AdjustTextObject("tarButtonArmourHigh", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonArmourHigh", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonArmourHigh", "targetLabel", 0, 2);
+
+        //  targeting type - health % low
+        //      button
+        this.menuGroupTower.AddMenuObject("tarButtonArmourLow", 5, "interactionPanelTarget");
+        this.menuGroupTower.AdjustMenuObject("tarButtonArmourLow", 0, new Vector3(0,-1.1,0));
+        this.menuGroupTower.AdjustMenuObject("tarButtonArmourLow", 1, new Vector3(0.55,0.25,0.45));
+        this.menuGroupTower.GetMenuObject("tarButtonArmourLow").addComponent
+        (
+            //add click action listener
+            new OnPointerDown
+            (
+                (e) => { this.SetTargetingType(6); },
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "Target Lowest Armour", distance: 16 }
+            )
+        );
+        //      label
+        this.menuGroupTower.AddMenuText("tarButtonArmourLow", "targetLabel", "LOWEST ARMOUR VALUE");
+        this.menuGroupTower.AdjustTextObject("tarButtonArmourLow", "targetLabel", 0, new Vector3(0,0,-0.04));
+        this.menuGroupTower.AdjustTextObject("tarButtonArmourLow", "targetLabel", 1, new Vector3(0.818,2,1));
+        this.menuGroupTower.AdjustTextDisplay("tarButtonArmourLow", "targetLabel", 0, 2);
 
         //menu off at start
         this.SetTowerMenuState(false);
     }
+
     //updates
     //  sets visibility of tower builder
     public SetTowerMenuState(state:boolean)
@@ -1138,32 +1125,29 @@ export class GameMenu2D
             //building new tower
             case 0:
                 this.menuGroupTower.SetMenuText("selectionInfo", "menuLabel", "BUILD TOWER");
+                //hide deconstruct and range buttons 
+                this.menuGroupTower.GetMenuObject("interactDeconstruct").SetObjectState(false);
+                this.menuGroupTower.GetMenuObject("interactToggleRange").SetObjectState(false);
                 //show build buttons
-                this.menuGroupTower.GetMenuObject("interactionBuild").SetObjectState(true);
-                this.menuGroupTower.GetMenuObject("interactionDisplayNext").SetObjectState(true);
-                this.menuGroupTower.GetMenuObject("interactionDisplayPrev").SetObjectState(true);
-                //hide upgrade buttons
-                this.menuGroupTower.GetMenuObject("upgradeButton0").SetObjectState(false);
-                this.menuGroupTower.GetMenuObject("upgradeButton1").SetObjectState(false);
-                this.menuGroupTower.GetMenuObject("upgradeButton2").SetObjectState(false);
-                this.menuGroupTower.GetMenuObject("upgradeButton3").SetObjectState(false);
+                this.menuGroupTower.GetMenuObject("interactionPanelBuild").SetObjectState(true);
+                //hide upgrade and targeting
+                this.menuGroupTower.GetMenuObject("interactionPanelUpgrade").SetObjectState(false);
+                this.menuGroupTower.GetMenuObject("interactionPanelTarget").SetObjectState(false);
             break;
             //managing existing tower
             case 1:
                 this.menuGroupTower.SetMenuText("selectionInfo", "menuLabel", "UPGRADE TOWER");
-                //show build buttons
-                this.menuGroupTower.GetMenuObject("interactionBuild").SetObjectState(false);
-                this.menuGroupTower.GetMenuObject("interactionDisplayNext").SetObjectState(false);
-                this.menuGroupTower.GetMenuObject("interactionDisplayPrev").SetObjectState(false);
-                //hide upgrade buttons
-                this.menuGroupTower.GetMenuObject("upgradeButton0").SetObjectState(true);
-                this.menuGroupTower.GetMenuObject("upgradeButton1").SetObjectState(true);
-                this.menuGroupTower.GetMenuObject("upgradeButton2").SetObjectState(true);
-                this.menuGroupTower.GetMenuObject("upgradeButton3").SetObjectState(true);
+                //show deconstruct and range buttons 
+                this.menuGroupTower.GetMenuObject("interactDeconstruct").SetObjectState(true);
+                this.menuGroupTower.GetMenuObject("interactToggleRange").SetObjectState(true);
+                //hide build buttons
+                this.menuGroupTower.GetMenuObject("interactionPanelBuild").SetObjectState(false);
+                //show upgrade buttons
+                this.menuGroupTower.GetMenuObject("interactionPanelUpgrade").SetObjectState(true);
+                this.menuGroupTower.GetMenuObject("interactionPanelTarget").SetObjectState(true);
             break;
         }
     }
-
     //displays the given tower foundation
     public DisplayTowerFoundation(TowerFoundation:TowerFoundation)
     {
@@ -1174,7 +1158,7 @@ export class GameMenu2D
         this.SetTowerMenuState(true);
 
         //if foundation has no built tower
-        if(this.selectedTowerFoundation.TowerDef == -1)
+        if(this.selectedTowerFoundation.TowerFrame.TowerDef == -1)
         {
             log("Game Menu: displaying tower="+this.selectedTowerFoundation.Index+" details, constructed tower=none");
 
@@ -1187,7 +1171,8 @@ export class GameMenu2D
         //if foundation has a built tower
         else
         {
-            log("Game Menu: displaying tower="+this.selectedTowerFoundation.Index+" details, constructed tower="+this.selectedTowerFoundation.TowerDef.toString());
+            log("Game Menu: displaying tower="+this.selectedTowerFoundation.Index+" details, constructed tower="
+            +this.selectedTowerFoundation.TowerFrame.TowerDef.toString());
 
             //update button display
             this.SetTowerMenuDisplayType(1);
@@ -1196,7 +1181,6 @@ export class GameMenu2D
             this.UpdateTowerUpgraderState();
         }
     }
-
     //  redraws tower builder, displaying the tower def of given index
     public UpdateTowerBuilderDisplay(index:number)
     {
@@ -1215,45 +1199,49 @@ export class GameMenu2D
         this.menuGroupTower.SetMenuText("selectionInfo", "rendValue", dataTowers[this.towerDefinitionIndex].ValueAttackRend.toString());
         this.menuGroupTower.SetMenuText("selectionInfo", "rangeValue", dataTowers[this.towerDefinitionIndex].ValueAttackRange.toString());
         this.menuGroupTower.SetMenuText("selectionInfo", "rofValue", dataTowers[this.towerDefinitionIndex].ValueAttackSpeed.toString());
+    
+        this.menuGroupTower.SetMenuText("selectionInfo", "targetLabel", "");
+        this.menuGroupTower.SetMenuText("selectionInfo", "targetValue", "");
 
-        log("Game Menu: redrew tower builder menu");
+        log("Game Menu: tower builder menu has been redrawn");
     }
-
     //  redraws tower upgrader, displaying the tower foundation of the given location
     public UpdateTowerUpgraderState()
     {
         if(this.selectedTowerFoundation != undefined)
         {
-            if(GameState.debuggingTower) { log("displaying def "+this.selectedTowerFoundation.TowerDef.toString()+" in upgrade menu"); }
+            if(GameState.debuggingTower) { log("displaying def "+this.selectedTowerFoundation.TowerFrame.TowerDef.toString()+" in upgrade menu"); }
 
             //update showcase details
-            this.menuGroupTower.SetMenuText("selectionInfo", "towerNameText", dataTowers[this.selectedTowerFoundation.TowerDef].DisplayName);
-            this.menuGroupTower.SetMenuText("selectionInfo", "descText", "\n\n"+dataTowers[this.selectedTowerFoundation.TowerDef].DisplayDesc);
-            this.menuGroupTower.SetMenuText("selectionInfo", "dmgValue", this.selectedTowerFoundation.TowerSystem.attackDamage.toString());
-            this.menuGroupTower.SetMenuText("selectionInfo", "penValue", this.selectedTowerFoundation.TowerSystem.attackPen.toString());
-            this.menuGroupTower.SetMenuText("selectionInfo", "rendValue", this.selectedTowerFoundation.TowerSystem.attackRend.toString());
-            this.menuGroupTower.SetMenuText("selectionInfo", "rangeValue", this.selectedTowerFoundation.TowerSystem.attackRange.toString());
-            this.menuGroupTower.SetMenuText("selectionInfo", "rofValue", this.selectedTowerFoundation.TowerSystem.attackSpeed.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "towerNameText", dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].DisplayName);
+            this.menuGroupTower.SetMenuText("selectionInfo", "descText", "\n\n"+dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].DisplayDesc);
+            this.menuGroupTower.SetMenuText("selectionInfo", "dmgValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackDamage.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "penValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackPen.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "rendValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackRend.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "rangeValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackRange.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "rofValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackSpeed.toString());
+
+            this.menuGroupTower.SetMenuText("selectionInfo", "targetLabel", "TARGETING:");
+            this.menuGroupTower.SetMenuText("selectionInfo", "targetValue", this.targetTypeStrings[this.selectedTowerFoundation.TowerFrame.TowerSystem.TargetingType]);
 
             //update buttons
             for(var i:number = 0; i<4; i++)
             {
                 this.menuGroupTower.GetMenuObject("upgradeButton"+i.toString()).SetObjectState(false);
             }
-            for(var i:number = 0; i<dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades.length; i++)
+            for(var i:number = 0; i<dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades.length; i++)
             {
                 this.menuGroupTower.GetMenuObject("upgradeButton"+i.toString()).SetObjectState(true);
                 
                 this.menuGroupTower.GetMenuObjectText("upgradeButton"+i.toString(), "upgradeLabel").getComponent(TextShape).value = 
-                    "COUNT: " + this.selectedTowerFoundation.TowerUpgrades[i]+" / "+dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[i][2]
-                    + "\tCOST: " +dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[i][1] + "\n"
-                    + dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[i][3] + " " + dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[i][0] 
+                    "COUNT: " + this.selectedTowerFoundation.TowerFrame.TowerUpgrades[i]+" / "+dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[i][2]
+                    + "\tCOST: " +dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[i][1] + "\n"
+                    + dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[i][3] + " " + dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[i][0] 
             }
         }
         
         log("Game Menu: redrew tower upgrader menu");
     }
-
     //  purchases upgrade for a given tower
     public PurchaseTowerUpgrade(index:number)
     {
@@ -1261,8 +1249,8 @@ export class GameMenu2D
         {
 
             //ensure upgrade is available and player has money
-            if(this.selectedTowerFoundation.TowerUpgrades[index] >= dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[index][2]
-                || dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[index][1] > GameState.PlayerMoney)
+            if(this.selectedTowerFoundation.TowerFrame.TowerUpgrades[index] >= +dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[index][2]
+                || +dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[index][1] > GameState.PlayerMoney)
             {
                 log("Game Menu: tower upgrade purchase failed, not enough money");
                 return;
@@ -1270,15 +1258,37 @@ export class GameMenu2D
             log("Game Menu: tower foundation="+this.selectedTowerFoundation.Index.toString()+" purchased tower upgrade="+index.toString());
 
             //remove money
-            GameState.PlayerMoney -= +dataTowers[this.selectedTowerFoundation.TowerDef].Upgrades[index][1];
+            GameState.PlayerMoney -= +dataTowers[this.selectedTowerFoundation.TowerFrame.TowerDef].Upgrades[index][1];
             this.updateMoneyCount();
 
             //apply upgrade
-            this.selectedTowerFoundation.ApplyUpgrade(index);
+            this.selectedTowerFoundation.TowerFrame.ApplyUpgrade(index);
 
             //update tower display
             this.UpdateTowerUpgraderState();
         }
+    }
+
+    //  sets targeting type for currently selected towers
+    private targetTypeStrings = 
+    [
+        "FURTHEST DOWN LANE",
+        "HIGHEST HEALTH VALUE",
+        "LOWEST HEALTH VALUE",
+        "HIGHEST HEALTH %",
+        "LOWEST HEALTH %",
+        "HIGHEST ARMOUR VALUE",
+        "LOWEST ARMOUR VALUE"
+    ];
+    public SetTargetingType(index:number)
+    {
+        if(this.selectedTowerFoundation == undefined) return;
+
+        //set targeting type
+        this.selectedTowerFoundation.TowerFrame.TowerSystem.TargetingType = index;
+
+        //update targeting UI
+        this.menuGroupTower.SetMenuText("selectionInfo", "targetValue", this.targetTypeStrings[this.selectedTowerFoundation.TowerFrame.TowerSystem.TargetingType]);
     }
 
     //3D scene info/how to play
@@ -1288,9 +1298,9 @@ export class GameMenu2D
     {
         //SCENE HOW TO
         //  frame
-        this.menuGroupSceneInfo.AddMenuObject("h2pFrame", 4);
-        this.menuGroupSceneInfo.AdjustMenuObject("h2pFrame", 0, new Vector3(2.4,1.6,-3));
-        this.menuGroupSceneInfo.AdjustMenuObject("h2pFrame", 1, new Vector3(1.8,1.8,1.8));
+        this.menuGroupSceneInfo.AddMenuObject("h2pFrame", 2);
+        this.menuGroupSceneInfo.AdjustMenuObject("h2pFrame", 0, new Vector3(2.4,1.9,-2.9));
+        this.menuGroupSceneInfo.AdjustMenuObject("h2pFrame", 1, new Vector3(1.4,1.4,1.4));
         this.menuGroupSceneInfo.AdjustMenuObject("h2pFrame", 2, new Vector3(0,180,0));
         //  text parent
         this.menuGroupSceneInfo.AddMenuObject("h2pContent", 0, "h2pFrame");
@@ -1298,38 +1308,38 @@ export class GameMenu2D
         this.menuGroupSceneInfo.AdjustMenuObject("h2pContent", 1, new Vector3(1,1,1));
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("h2pContent", "infoHeader", "HOW TO PLAY");
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoHeader", 0, new Vector3(0,0.39,0));
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoHeader", 1, new Vector3(0.25,0.25,0.025));
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoHeader", 0, new Vector3(0,0.6,0));
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoHeader", 1, new Vector3(0.35,0.35,0.035));
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoHeader", 0, 6);
         //  info text
         this.menuGroupSceneInfo.AddMenuText("h2pContent", "infoText", 
             "1 - Defeat enemies and clear waves to earn money\n" + 
-            "2 - Spend money on constructing new towers or upgrading existing towers\n" +
+            "2 - Spend money on constructing new towers or upgrading existing towers (you can move towers between waves or sell them to get some of their value back)\n" +
             "3 - Enemies grow stronger with every wave you defeat, every 5th wave is a special boss wave\n" +
             "4 - Each enemy that reaches your base will damage your health (1HP per standard unit, 10HP per boss unit) and then self destruct. If you reach 0 HP you lose the game!\n"
         );
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText", 0, new Vector3(0,0.25,0));
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText", 1, new Vector3(0.25,0.25,0.025));
-        this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText").getComponent(TextShape).width = 7;
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText", 0, new Vector3(0,0.45,0));
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText", 1, new Vector3(0.35,0.35,0.035));
+        this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText").getComponent(TextShape).width = 6;
         this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText").getComponent(TextShape).textWrapping = true;
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText", 0, 2);
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText", 1, 0);
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText", 2, 0);
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("h2pContent", "infoText2","Can you clear all 30 waves?");
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText2", 0, new Vector3(0,-0.25,0));
-        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText2", 1, new Vector3(0.25,0.25,0.025));
-        this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText2").getComponent(TextShape).width = 7;
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText2", 0, new Vector3(0,-0.65,0));
+        this.menuGroupSceneInfo.AdjustTextObject("h2pContent", "infoText2", 1, new Vector3(0.35,0.35,0.035));
+        this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText2").getComponent(TextShape).width = 6;
         this.menuGroupSceneInfo.GetMenuObjectText("h2pContent", "infoText2").getComponent(TextShape).textWrapping = true;
-        this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText2", 0, 2);
+        this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText2", 0, 4);
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText2", 1, 1);
         this.menuGroupSceneInfo.AdjustTextDisplay("h2pContent", "infoText2", 2, 1);
 
         //SCENE INFO
         //  frame
-        this.menuGroupSceneInfo.AddMenuObject("infoFrame", 4);
-        this.menuGroupSceneInfo.AdjustMenuObject("infoFrame", 0, new Vector3(-1.4,1.6,-1.4));
-        this.menuGroupSceneInfo.AdjustMenuObject("infoFrame", 1, new Vector3(1.8,1.8,1.8));
+        this.menuGroupSceneInfo.AddMenuObject("infoFrame", 2);
+        this.menuGroupSceneInfo.AdjustMenuObject("infoFrame", 0, new Vector3(-1.35,1.9,-1.35));
+        this.menuGroupSceneInfo.AdjustMenuObject("infoFrame", 1, new Vector3(1.4,1.4,1.4));
         this.menuGroupSceneInfo.AdjustMenuObject("infoFrame", 2, new Vector3(0,225,0));
         //  text parent
         this.menuGroupSceneInfo.AddMenuObject("infoContent", 0, "infoFrame");
@@ -1337,26 +1347,56 @@ export class GameMenu2D
         this.menuGroupSceneInfo.AdjustMenuObject("infoContent", 1, new Vector3(1,1,1));
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("infoContent", "infoHeader", "SCENE INFO");
-        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 0, new Vector3(0,0.39,0));
-        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 1, new Vector3(0.25,0.25,0.025));
+        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 0, new Vector3(0,0.6,0));
+        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 1, new Vector3(0.35,0.35,0.035));
         this.menuGroupSceneInfo.AdjustTextDisplay("infoContent", "infoHeader", 0, 6);
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("infoContent", "infoHeader", 
-            "This scene is an example of how to deploy the Decentraland Tower Defence Module on Decentraland Worlds."+
-            "Due to the restrictive nature of DCL Worlds significant efforts have been made to optimize all assets and code used throughout the scene."+
-            "\n\nThis module's development was funded through the Community Grants Program and the entire Tower Defence Creation Kit is completely open-source and free to use with no strings attatched."
+            "This scene is an example implementation of how the Decentraland Tower Defence Module can be deployed on Decentraland Worlds."+
+            "\n\nSeveral other scenes have also been developed using this kit! You can check them out here:"+
+            "\n\n\n\nThis module's development was funded through the Community Grants Program and the entire Tower Defence Creation Kit is completely open-source and free to use. You can check out the repository for the source and a quick guide on how to get started!"
         );
-        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 0, new Vector3(0,0.25,0));
-        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 1, new Vector3(0.25,0.25,0.025));
-        this.menuGroupSceneInfo.GetMenuObjectText("infoContent", "infoHeader").getComponent(TextShape).width = 7;
+        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 0, new Vector3(0,0.45,0));
+        this.menuGroupSceneInfo.AdjustTextObject("infoContent", "infoHeader", 1, new Vector3(0.35,0.35,0.035));
+        this.menuGroupSceneInfo.GetMenuObjectText("infoContent", "infoHeader").getComponent(TextShape).width = 6;
         this.menuGroupSceneInfo.GetMenuObjectText("infoContent", "infoHeader").getComponent(TextShape).textWrapping = true;
         this.menuGroupSceneInfo.AdjustTextDisplay("infoContent", "infoHeader", 0, 2);
         this.menuGroupSceneInfo.AdjustTextDisplay("infoContent", "infoHeader", 1, 0);
         this.menuGroupSceneInfo.AdjustTextDisplay("infoContent", "infoHeader", 2, 0);
+        //  button other scenes
+        for(var i:number=0; i<this.stringsSceneNames.length; i++)
+        {
+            const pos:Vector3 = new Vector3(((i%3)-1)*0.66,-0.075,0);
+            //  button creator object
+            this.menuGroupSceneInfo.AddMenuObject("buttonScene"+i, 5, "infoFrame");
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 0, pos);
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 1, new Vector3(0.22,0.18,0.2));
+            /*this.menuGroupSceneInfo.GetMenuObject("buttonScene"+i).addComponent
+            (
+                new OnPointerDown
+                (
+                    (e) =>
+                    {
+                    //open link
+                    openExternalURL("");
+                    },
+                    {
+                    button: ActionButton.ANY,
+                    showFeedback: true,
+                    hoverText: "[E] CREATOR_NAME_"+i,
+                    distance: 8
+                    }
+                )
+            );*/
+            //  button creator text
+            this.menuGroupSceneInfo.AddMenuText("buttonScene"+i, "buttonText", this.stringsSceneNames[i]);
+            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+i, "buttonText", 0, new Vector3(0,0,-0.031));
+            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+i, "buttonText", 1, new Vector3(0.34,0.42,0.03));
+        }
         //  button repo object
-        this.menuGroupSceneInfo.AddMenuObject("buttonRepo", 2, "infoFrame");
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 0, new Vector3(-0.4,-0.35,0));
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 1, new Vector3(0.6,0.2,0.2));
+        this.menuGroupSceneInfo.AddMenuObject("buttonRepo", 5, "infoFrame");
+        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 0, new Vector3(-0.4,-0.65,0));
+        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 1, new Vector3(0.2,0.2,0.2));
         this.menuGroupSceneInfo.GetMenuObject("buttonRepo").addComponent
         (
             new OnPointerDown
@@ -1377,11 +1417,11 @@ export class GameMenu2D
         //  button repo text
         this.menuGroupSceneInfo.AddMenuText("buttonRepo", "buttonText", "REPOSITORY");
         this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 0, new Vector3(0,0,-0.031));
-        this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 1, new Vector3(0.1,0.3,0.03));
+        this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 1, new Vector3(0.4,0.4,0.03));
         //  button proposal object
-        this.menuGroupSceneInfo.AddMenuObject("buttonRepo", 2, "infoFrame");
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 0, new Vector3(0.4,-0.35,0));
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 1, new Vector3(0.6,0.2,0.2));
+        this.menuGroupSceneInfo.AddMenuObject("buttonRepo", 5, "infoFrame");
+        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 0, new Vector3(0.4,-0.65,0));
+        this.menuGroupSceneInfo.AdjustMenuObject("buttonRepo", 1, new Vector3(0.2,0.2,0.2));
         this.menuGroupSceneInfo.GetMenuObject("buttonRepo").addComponent
         (
             new OnPointerDown
@@ -1402,13 +1442,13 @@ export class GameMenu2D
         //  button repo proposal
         this.menuGroupSceneInfo.AddMenuText("buttonRepo", "buttonText", "PROPOSAL");
         this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 0, new Vector3(0,0,-0.031));
-        this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 1, new Vector3(0.1,0.3,0.03));
+        this.menuGroupSceneInfo.AdjustTextObject("buttonRepo", "buttonText", 1, new Vector3(0.4,0.4,0.03));
 
         //SCENE CREDITS
         //  frame
-        this.menuGroupSceneInfo.AddMenuObject("creditFrame", 4);
-        this.menuGroupSceneInfo.AdjustMenuObject("creditFrame", 0, new Vector3(-3,1.6,2.4));
-        this.menuGroupSceneInfo.AdjustMenuObject("creditFrame", 1, new Vector3(1.8,1.8,1.8));
+        this.menuGroupSceneInfo.AddMenuObject("creditFrame", 2);
+        this.menuGroupSceneInfo.AdjustMenuObject("creditFrame", 0, new Vector3(-2.9,1.9,2.4));
+        this.menuGroupSceneInfo.AdjustMenuObject("creditFrame", 1, new Vector3(1.4,1.4,1.4));
         this.menuGroupSceneInfo.AdjustMenuObject("creditFrame", 2, new Vector3(0,270,0));
         //  text parent
         this.menuGroupSceneInfo.AddMenuObject("creditContent", 0, "creditFrame");
@@ -1416,51 +1456,78 @@ export class GameMenu2D
         this.menuGroupSceneInfo.AdjustMenuObject("creditContent", 1, new Vector3(1,1,1));
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("creditContent", "infoHeader", "SCENE CREDITS");
-        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 0, new Vector3(0,0.39,0));
-        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 1, new Vector3(0.25,0.25,0.025));
+        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 0, new Vector3(0,0.6,0));
+        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 1, new Vector3(0.35,0.35,0.035));
         this.menuGroupSceneInfo.AdjustTextDisplay("creditContent", "infoHeader", 0, 6);
         //  label header text
         this.menuGroupSceneInfo.AddMenuText("creditContent", "infoHeader", 
             "This project included a large number of creators from the Decentraland community! Though this specific scene may not include assets from every creator,"+
-            " I feel it is important to still include every person who helped make this project a reality! You can access information for each creator by simply clicking the buttons below!\n>>WIP<<"
+            " I feel it is important to still include every person who helped make this project a reality!"
+            +"\n\n\n\n\t\t   Music: Karl Casey @ White Bat Audio"
         );
-        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 0, new Vector3(0,0.25,0));
-        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 1, new Vector3(0.25,0.25,0.025));
-        this.menuGroupSceneInfo.GetMenuObjectText("creditContent", "infoHeader").getComponent(TextShape).width = 7;
+        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 0, new Vector3(0,0.45,0));
+        this.menuGroupSceneInfo.AdjustTextObject("creditContent", "infoHeader", 1, new Vector3(0.35,0.35,0.035));
+        this.menuGroupSceneInfo.GetMenuObjectText("creditContent", "infoHeader").getComponent(TextShape).width = 6;
         this.menuGroupSceneInfo.GetMenuObjectText("creditContent", "infoHeader").getComponent(TextShape).textWrapping = true;
         this.menuGroupSceneInfo.AdjustTextDisplay("creditContent", "infoHeader", 0, 2);
         this.menuGroupSceneInfo.AdjustTextDisplay("creditContent", "infoHeader", 1, 0);
         this.menuGroupSceneInfo.AdjustTextDisplay("creditContent", "infoHeader", 2, 0);
 
-
-        //  button creator object
-        this.menuGroupSceneInfo.AddMenuObject("buttonCreator0", 2, "creditFrame");
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator0", 0, new Vector3(0,-0.15,0));
-        this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator0", 1, new Vector3(0.6,0.2,0.2));
-        this.menuGroupSceneInfo.GetMenuObject("buttonCreator0").addComponent
-        (
-            new OnPointerDown
+        //generate creator linkages
+        for(var i:number=0; i<this.stringsCreators.length; i++)
+        {
+            const pos:Vector3 = new Vector3(((i%4)-1.5)*0.61,-0.38-(Math.round(i/8)*0.235),0);
+            //  button creator object
+            this.menuGroupSceneInfo.AddMenuObject("buttonCreator"+i, 5, "creditFrame");
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 0, pos);
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 1, new Vector3(0.22,0.2,0.2));
+            /*this.menuGroupSceneInfo.GetMenuObject("buttonCreator"+i).addComponent
             (
-                (e) =>
-                {
-                  //open link
-                  openExternalURL("");
-                },
-                {
-                  button: ActionButton.ANY,
-                  showFeedback: true,
-                  hoverText: "[E] CREATOR_NAME_0",
-                  distance: 8
-                }
-            )
-        );
-        //  button creator text
-        this.menuGroupSceneInfo.AddMenuText("buttonCreator0", "buttonText", "CREATOR_NAME");
-        this.menuGroupSceneInfo.AdjustTextObject("buttonCreator0", "buttonText", 0, new Vector3(0,0,-0.031));
-        this.menuGroupSceneInfo.AdjustTextObject("buttonCreator0", "buttonText", 1, new Vector3(0.1,0.3,0.03));
-
+                new OnPointerDown
+                (
+                    (e) =>
+                    {
+                    //open link
+                    openExternalURL("");
+                    },
+                    {
+                    button: ActionButton.ANY,
+                    showFeedback: true,
+                    hoverText: "[E] CREATOR_NAME_"+i,
+                    distance: 8
+                    }
+                )
+            );*/
+            //  button creator text
+            this.menuGroupSceneInfo.AddMenuText("buttonCreator"+i, "buttonText", this.stringsCreators[i]);
+            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+i, "buttonText", 0, new Vector3(0,0,-0.031));
+            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+i, "buttonText", 1, new Vector3(0.30,0.30,0.03));
+        }
 
         //activate menu by default
         this.menuGroupSceneInfo.SetMenuState(true);
     }
+    private stringsSceneNames:string[] = 
+    [
+        "TD Factory",
+        "TD Shipyard",
+        "TD Neon City",
+    ];
+    private stringsSceneURLs:string[] = 
+    [
+        "//",
+        "//",
+        "//",
+    ];
+    private stringsCreators:string[] = 
+    [
+        "Jacko",
+        "CG-KING",
+        "TheCryptoTrader69",
+        "Ottonamas",
+        "Jetrolee",
+        "DemiDesign",
+        "Emilie",
+        "Finegrapgh",
+    ];
 }
