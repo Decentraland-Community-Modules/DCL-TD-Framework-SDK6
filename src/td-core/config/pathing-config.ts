@@ -13,7 +13,7 @@ export const configSpawners =
         actions:
         [
             //index of targeted spawn & state to set (0=off, 1=on)
-            {index: 7, state: 0},
+            {index: 7, state: 1},
             {index: 9, state: 1},
         ]
     },
@@ -29,7 +29,7 @@ export const configSpawners =
         wave: 2,
         actions:
         [
-            {index: 7, state: 0},
+            {index: 7, state: 1},
             {index: 9, state: 1},
         ]
     },

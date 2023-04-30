@@ -49,11 +49,11 @@ export class EnemyUnitManager extends Entity
 
     //callbacks
     //  unit attack
-    public UnitAttack:() => void;
-    private unitAttack() { log("Enemy Manager: callback not set - start wave"); }
+    public UnitAttack:(value:number) => void;
+    private unitAttack(value:number) { log("Enemy Manager: callback not set - start wave"); }
     //  unit death
-    public UnitDeath:(index:number) => void;
-    private unitDeath(index:number) { log("Enemy Manager: callback not set - unit death:"+index.toString()); }
+    public UnitDeath:(index:number, rewarded:boolean) => void;
+    private unitDeath(index:number, rewarded:boolean) { log("Enemy Manager: callback not set - unit death:"+index.toString()); }
 
     /**
      * constructor
@@ -105,7 +105,7 @@ export class EnemyUnitManager extends Entity
     {
         //create object
         const index:number = this.enemyList.size();
-        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath);
+        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath, this.callbackKillUnit);
         obj.setParent(this);
         
         //add to collections
@@ -207,6 +207,21 @@ export class EnemyUnitManager extends Entity
     {
         //access unit and pass call down
         return this.enemyDict.getItem(index.toString()).ApplyDamage(dam, pen, rend);
+    }
+
+    /**
+     * kills the unit of the given index
+     * @param index access index of unit to be killed
+     * @param rewarded if true player is rewarded/credited for killing enemy 
+     */
+    public callbackKillUnit(index:number, rewarded:boolean)
+    {
+        EnemyUnitManager.Instance.KillUnit(index, rewarded);
+    }
+    public KillUnit(index:number, rewarded:boolean)
+    {
+        //access unit and pass call down
+        return this.enemyDict.getItem(index.toString()).KillUnit(rewarded);
     }
 
     /**

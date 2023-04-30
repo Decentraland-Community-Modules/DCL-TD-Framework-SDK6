@@ -261,7 +261,7 @@ export class TowerFrame extends Entity
         //this.rangeIndicator.addComponent(this.getTowerMaterial(0, 0));
         this.rangeIndicator.addComponent(new Transform
         ({
-            position: new Vector3(0,0.1,0),
+            position: new Vector3(0,0.21,0),
             scale: new Vector3(0,0,0),
             rotation: new Quaternion().setEuler(0,0,0)
         }));
@@ -361,22 +361,24 @@ export class TowerFrame extends Entity
         //  indicator
         this.rangeIndicator.getComponent(Transform).scale = new Vector3
         (
-            dataTowers[this.TowerDef].ValueAttackRange * 3.5,
+            dataTowers[this.TowerDef].ValueAttackRange * 2.22,
             1,
-            dataTowers[this.TowerDef].ValueAttackRange * 3.5
+            dataTowers[this.TowerDef].ValueAttackRange * 2.22
         );
         this.SetRangeIndicator(false);
 
         //pull in functional details
         //  attack animator raw details
-        this.TowerSystem.attackDamagePeriod = dataTowers[this.TowerDef].ValueAttackIntervalDamage;
-        this.TowerSystem.attackLength = dataTowers[this.TowerDef].ValueAttackIntervalFull;
+        this.TowerSystem.attackAnimDamagePoint = dataTowers[this.TowerDef].ValueAttackIntervalDamage;
+        this.TowerSystem.attackAnimLength = dataTowers[this.TowerDef].ValueAttackIntervalFull;
         //  attack details
         this.TowerSystem.attackDamage = dataTowers[this.TowerDef].ValueAttackDamage;
         this.TowerSystem.attackRend = dataTowers[this.TowerDef].ValueAttackRend;
         this.TowerSystem.attackPen = dataTowers[this.TowerDef].ValueAttackPenetration;
         this.TowerSystem.attackRange = dataTowers[this.TowerDef].ValueAttackRange;
-        this.TowerSystem.attackSpeed = dataTowers[this.TowerDef].ValueAttackSpeed;
+        //calculate attack cooldown
+        this.TowerSystem.attackPerSecond = dataTowers[this.TowerDef].ValueAttackSpeed;
+        this.TowerSystem.attackCooldown = (1/this.TowerSystem.attackPerSecond);
 
         //reset system
         this.TowerSystem.Reset();
@@ -411,10 +413,13 @@ export class TowerFrame extends Entity
                     + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
             break;
             case "ValueAttackSpeed":
-                this.TowerSystem.attackSpeed = dataTowers[this.TowerDef].ValueAttackSpeed 
+                //set attacks per second
+                this.TowerSystem.attackPerSecond = dataTowers[this.TowerDef].ValueAttackSpeed 
                     + (this.TowerUpgrades[index] * (+dataTowers[this.TowerDef].Upgrades[index][3]));
+                //calculate attack cooldown
+                this.TowerSystem.attackCooldown = (1/this.TowerSystem.attackPerSecond);
                 //scale animation
-                this.TowerSystem.animations[1].speed = this.TowerSystem.attackLength / this.TowerSystem.attackSpeed;
+                this.TowerSystem.animations[1].speed = this.TowerSystem.attackAnimLength * this.TowerSystem.attackPerSecond;
             break;
         }
     }
@@ -454,10 +459,12 @@ export class TowerStructureSystem implements ISystem
     attackRange:number = 0;
     //  attack speed
     //      animation raw lengths
-    attackLength:number = 2;    //full length of animation
-    attackDamagePeriod:number = 1;  //point in animation when damage is dealt
-    //      actual length of attacks
-    attackSpeed:number = 0;
+    attackAnimLength:number = 2;    //full length of animation
+    attackAnimDamagePoint:number = 1;  //point in animation when damage is dealt
+    //  attacks per second
+    attackPerSecond:number = 0;
+    //  actual length of attacks
+    attackCooldown:number = 0;
     //  special modifiers (WIP)
     //attackModifiers:number[][];
 
@@ -565,7 +572,7 @@ export class TowerStructureSystem implements ISystem
         //  states
         this.animations = [];
         this.animations.push(new AnimationState('anim_idle', { looping: true, speed: 0.2 }));
-        this.animations.push(new AnimationState('anim_attack', { looping: true, speed: 1 }));
+        this.animations.push(new AnimationState('anim_attack', { looping: false, speed: 1 }));
         //  clips
         this.animator.addClip(this.animations[0]);
         this.animator.addClip(this.animations[1]);
@@ -601,9 +608,10 @@ export class TowerStructureSystem implements ISystem
                 //timing
                 this.isAttacking = true;
                 this.hasDamaged = false;
-                //  scale based on attack speed
-                this.attackTimer[0] = this.attackSpeed/100 * (this.attackLength - this.attackDamagePeriod);
-                this.attackTimer[1] = this.attackSpeed/100 * this.attackDamagePeriod;///this.attackLength);
+                //  scale timing based on attack speed
+                this.attackTimer[0] = (this.attackCooldown * (this.attackAnimDamagePoint/this.attackAnimLength));
+                this.attackTimer[1] = this.attackCooldown * ((this.attackAnimLength - this.attackAnimDamagePoint)/this.attackAnimLength);
+                //log("TEST: attackCD="+this.attackCooldown+", timeBefore="+this.attackTimer[0]+", timeAfter="+this.attackTimer[1]);
             }
         }
         //if attacking, reduce cooldown
@@ -618,6 +626,7 @@ export class TowerStructureSystem implements ISystem
                 //check if damage should be dealt
                 if(this.attackTimer[0] <= 0)
                 {
+                    //log("TEST: DAM, "+this.attackTimer[0]);
                     //deal damage
                     this.hasDamaged = true;
                     if(this.TowerTarget != undefined)
@@ -641,6 +650,7 @@ export class TowerStructureSystem implements ISystem
                 {
                     //finish attack
                     this.isAttacking = false;
+                    //log("TEST: FIN, "+this.attackTimer[1]);
                 }
             } 
         }

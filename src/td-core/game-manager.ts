@@ -60,13 +60,24 @@ export class GameManager extends Entity
             rotation: new Quaternion().setEuler(0,0,0)
         }));
 
-        //2D menu callbacks
+        //menu callbacks
         GameMenu.Instance.SetDifficulty = this.callbackSetDifficulty;
         GameMenu.Instance.GameStart = this.callbackGameStart;
         GameMenu.Instance.GameReset = this.callbackGameReset;
         GameMenu.Instance.WaveStart = this.callbackWaveStart;
         GameMenu.Instance.TowerBuild = this.callbackTowerBuild;
         GameMenu.Instance.TowerDeconstruct = this.callbackTowerDeconstruct;
+        //enable and place tower menu (work around to enforce positional update based on player location)
+        //  initial position
+        GameMenu.Instance.menuGroupTower.AdjustMenuParent(0, new Vector3(4,24,4));
+        //  rotation
+        GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).lookAt(Camera.instance.position);
+        GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).rotation = Quaternion.Euler
+        (
+            0,
+            GameMenu.Instance.menuGroupTower.groupParent.getComponent(Transform).eulerAngles.y + 180,
+            0
+        );
 
         //timer system setup
         this.gameTimerSystem = new GameTimerSystem();
@@ -135,6 +146,9 @@ export class GameManager extends Entity
         //clean map
         EnemyUnitManager.Instance.ClearUnits();
         TowerManager.Instance.ClearTowers();
+        //remove selected move foundation
+        this.selectedFoundationMove = undefined;
+        TowerManager.Instance.SetTowerMoveMarkerState(false);
         
         //redraw display
         GameMenu.Instance.UpdateMainMenuState(0);
@@ -626,32 +640,36 @@ export class GameManager extends Entity
      * called when an enemy unit has been killed, unit is automatically
      * cleaned up in enemy entity class before this is called.
      * @param index index of enemy unit object that was killed
+     * @param rewarded if true rewards will be provided for the unit's death
      */
     enemyUnit:undefined|EnemyUnitObject;
-    public callbackEnemyUnitDeath(index:number)
+    public callbackEnemyUnitDeath(index:number, rewarded:boolean)
     {
-        GameManager.Instance.EnemyUnitDeath(index);
+        GameManager.Instance.EnemyUnitDeath(index, rewarded);
     }
-    public EnemyUnitDeath(index:number)
+    public EnemyUnitDeath(index:number, rewarded:boolean)
     {
         this.enemyUnit = EnemyUnitManager.Instance.GetEnemyUnitByIndex(index);
         //ensure unit exists
         if(this.enemyUnit == undefined)
         { 
-            if(GameState.debuggingEnemy) log("TD MANAGER (ERROR): attempting to kill nonexistant enemy="+index.toString()); 
+            log("TD MANAGER (ERROR): attempting to kill nonexistant enemy="+index.toString()); 
             return;
         }
         //ensure unit is alive
         if(!this.enemyUnit.IsAlive)
         { 
-            if(GameState.debuggingEnemy) log("TD MANAGER (ERROR): attempting to kill dead enemy="+index.toString()); 
+            log("TD MANAGER (ERROR): attempting to kill dead enemy="+index.toString()); 
             return;
         }
         if(GameState.debuggingEnemy) log("TD MANAGER: enemy unit "+index.toString()+" has been killed, processing EnemyUnitDeath"); 
 
-        //award bounty to player
-        GameState.PlayerMoney += EnemyData[this.enemyUnit.Type].ValueRewards;
-        GameMenu.Instance.updateMoneyCount();
+        if(rewarded)
+        {
+            //award bounty to player
+            GameState.PlayerMoney += EnemyData[this.enemyUnit.Type].ValueRewards;
+            GameMenu.Instance.updateMoneyCount();
+        }
 
         //send death update to all towers
         TowerManager.Instance.TargetDeathCheck(index);
@@ -673,16 +691,16 @@ export class GameManager extends Entity
     /**
      * called when the player's base takes damage
      */
-    public callbackPlayerBaseDamage()
+    public callbackPlayerBaseDamage(value:number)
     {
-        GameManager.Instance.PlayerBaseDamage();
+        GameManager.Instance.PlayerBaseDamage(value);
     }
-    public PlayerBaseDamage()
+    public PlayerBaseDamage(value:number)
     {
-        if(GameState.debuggingManager) log("TD MANAGER: player base damaged");
+        if(GameState.debuggingManager) log("TD MANAGER: player base dealt "+value.toString()+" damage");
 
         //deal damage
-        GameState.PlayerHealth--;
+        GameState.PlayerHealth -= value;
 
         //check if player's base is destroyed
         if(GameState.PlayerHealth <= 0)

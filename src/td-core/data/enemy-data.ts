@@ -57,15 +57,18 @@ export const EnemyData =
         SpawnType:0,
         SpawnCost:0.45,
         //survival
-        ValueSpeed:0.60,
-        ValueHealthBase:32,
-        ValueHealthGrowth:2.5,
-        ValueArmourBase:0,
-        ValueArmourGrowth:0,
+        ValueSpeed:0.80,
+        ValueHealthBase:10,
+        ValueHealthGrowth:0.25,
+        ValueArmourBase:10,
+        ValueArmourGrowth:0.25,
         //rewards
-        ValueRewards:2,
-        //mechanic
-        Attributes: ""
+        ValueRewards:1,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //  drone
     {
@@ -85,17 +88,20 @@ export const EnemyData =
         DisplayDesc:"Agile flying unit",
         //spawning
         SpawnType:0,
-        SpawnCost:0.75,
+        SpawnCost:0.45,
         //survival
-        ValueSpeed:0.65,
-        ValueHealthBase:32,
-        ValueHealthGrowth:2.5,
+        ValueSpeed:0.85,
+        ValueHealthBase:30,
+        ValueHealthGrowth:1,
         ValueArmourBase:0,
         ValueArmourGrowth:0,
         //rewards
-        ValueRewards:3,
-        //mechanic
-        Attributes: ""
+        ValueRewards:1,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //### MEDIUM ENEMIES ###
     //  walker
@@ -118,15 +124,18 @@ export const EnemyData =
         SpawnType:1,
         SpawnCost:1,
         //survival
-        ValueSpeed:0.5,
-        ValueHealthBase:32,
-        ValueHealthGrowth:2.5,
-        ValueArmourBase:0,
+        ValueSpeed:0.65,
+        ValueHealthBase:50,
+        ValueHealthGrowth:2.25,
+        ValueArmourBase:5,
         ValueArmourGrowth:0,
         //rewards
-        ValueRewards:4,
-        //mechanic
-        Attributes: ""
+        ValueRewards:2,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //### LARGE ENEMIES ###
     //  bruiser
@@ -150,17 +159,20 @@ export const EnemyData =
         SpawnCost:3,
         //survival
         ValueSpeed:0.45,
-        ValueHealthBase:32,
-        ValueHealthGrowth:2.5,
-        ValueArmourBase:0,
-        ValueArmourGrowth:0,
+        ValueHealthBase:120,
+        ValueHealthGrowth:4,
+        ValueArmourBase:14,
+        ValueArmourGrowth:1,
         //rewards
-        ValueRewards:12,
-        //mechanic
-        Attributes: ""
+        ValueRewards:4,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //### BOSS ENEMIES ###
-    //  shielder
+    //  champion
     {
         //model path
         ObjectPath:"enemyBruiser",
@@ -174,21 +186,24 @@ export const EnemyData =
         ValueDeathLength:1.4,   //length of death animation (in seconds)
         ValueDeathLengthScale:2,//speed of death animation
         //display
-        DisplayName:"Shielder",
-        DisplayDesc:"Provides a damage reduction shield to all surrounding units.",
+        DisplayName:"Champion",
+        DisplayDesc:"Massive tank unit",
         //spawning
         SpawnType:3,
         SpawnCost:30,
         //survival
-        ValueSpeed:0.45,
-        ValueHealthBase:120,
-        ValueHealthGrowth:2.5,
-        ValueArmourBase:0,
-        ValueArmourGrowth:0,
+        ValueSpeed:0.25,
+        ValueHealthBase:300,
+        ValueHealthGrowth:8,
+        ValueArmourBase:30,
+        ValueArmourGrowth:2.5,
         //rewards
-        ValueRewards:120,
-        //mechanic
-        Attributes: ""
+        ValueRewards:25,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //  Spawner
     {
@@ -210,14 +225,17 @@ export const EnemyData =
         SpawnType:3,
         SpawnCost:50,
         //survival
-        ValueSpeed:0.45,
-        ValueHealthBase:120,
-        ValueHealthGrowth:2.5,
-        ValueArmourBase:0,
-        ValueArmourGrowth:0,
+        ValueSpeed:0.25,
+        ValueHealthBase:250,
+        ValueHealthGrowth:12,
+        ValueArmourBase:50,
+        ValueArmourGrowth:1,
         //rewards
-        ValueRewards:200,
-        //mechanic
-        Attributes: ""
+        ValueRewards:35,
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
 ]

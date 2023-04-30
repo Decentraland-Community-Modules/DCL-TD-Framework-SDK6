@@ -14,6 +14,7 @@ import { DifficultyData } from "./data/difficulty-data";
 import { EnemyData } from "./data/enemy-data";
 import { GameState } from "./game-states";
 import { Waypoint, WaypointManager } from "./map-pathing";
+import { TowerStructureSystem } from "./tower-entity";
 //object that represents an enemy in scene
 export class EnemyUnitObject extends Entity
 {
@@ -42,7 +43,7 @@ export class EnemyUnitObject extends Entity
     unitSystem:EnemyUnitSystem;
 
     //callbacks    
-    OnDeath:(index:number) => void;
+    OnDeath:(index:number, rewarded:boolean) => void;
 
     /**
      * constructor
@@ -52,7 +53,7 @@ export class EnemyUnitObject extends Entity
      * @param unitAttack callback for unit attack
      * @param unitDeath callback for unit death
      */
-    public constructor(index:number, healthShapeCur:GLTFShape, triggerShape:TriggerBoxShape, unitAttack:()=>void, unitDeath:(index:number)=>void)
+    public constructor(index:number, healthShapeCur:GLTFShape, triggerShape:TriggerBoxShape, unitAttack:(value:number)=>void, unitDeath:(index:number, rewarded:boolean)=>void, killUnit:(index:number, rewarded:boolean)=>void)
     {
         //object
         super();
@@ -89,7 +90,7 @@ export class EnemyUnitObject extends Entity
         this.unitAvatar.setParent(this);
 
         //unit system
-        this.unitSystem = new EnemyUnitSystem(this.Index, this, this.unitAvatar, unitAttack);
+        this.unitSystem = new EnemyUnitSystem(this.Index, this, this.unitAvatar, unitAttack, killUnit);
 
         //trigger
         this.addComponent(
@@ -193,7 +194,7 @@ export class EnemyUnitObject extends Entity
     {
         if(this.HealthCur == 0) 
         {
-            if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": ERROR attempting to damage already dead enemy, could be a unit clean-up desync") }
+            log("Enemy Unit "+this.Index.toString()+": ERROR attempting to damage already dead enemy, could be a unit clean-up desync")
             return true;
         }
 
@@ -212,22 +213,7 @@ export class EnemyUnitObject extends Entity
         if(GameState.debuggingEnemy) { log("Enemy Unit "+this.Index.toString()+": damage dealt to unit, health remaining = "+this.HealthCur.toString()) }
         if(this.HealthCur == 0)
         {
-            //play death anim
-            this.unitSystem.SetAnimationState(3);
-
-            //hide entity from scene after death
-            this.addComponent( new Delay(EnemyData[this.Type].ValueDeathLength*(1000/EnemyData[this.Type].ValueDeathLengthScale), () => 
-            { 
-                log("Enemy Unit "+this.index.toString()+": death delay completed, unit is being reset");
-                this.IsAlive = false;
-                this.SetEngineState(false);
-            }) );
-
-            //halt movement
-            engine.removeSystem(this.unitSystem);
-
-            //death callback
-            this.OnDeath(this.Index);
+            this.KillUnit(true);
 
             //enemy has been killed
             return false;
@@ -243,6 +229,30 @@ export class EnemyUnitObject extends Entity
         }
     }
     
+    /**
+     * kills the unit, playing death animation then removes the entity from scene
+     * @param rewarded if true player is rewarded/credited for killing enemy 
+     */
+    public KillUnit(rewarded:boolean)
+    {
+        //play death anim
+        this.unitSystem.SetAnimationState(3);
+
+        //hide entity from scene after death
+        this.addComponent( new Delay(EnemyData[this.Type].ValueDeathLength*(1000/EnemyData[this.Type].ValueDeathLengthScale), () => 
+        { 
+            log("Enemy Unit "+this.index.toString()+": death delay completed, unit is being reset");
+            this.IsAlive = false;
+            this.SetEngineState(false);
+        }) );
+
+        //halt movement
+        engine.removeSystem(this.unitSystem);
+
+        //death callback, with reward
+        this.OnDeath(this.Index, rewarded);
+    }
+
     /**
      * de/activates object and system within the engine state
      * @param state new state for object: true = object is active, false = object is hidden
@@ -319,14 +329,15 @@ export class EnemyUnitSystem implements ISystem
     }
 
     //callbacks
-    onAttack: () => void;
+    killUnit: (value:number, rewarded:boolean) => void;
+    onAttack: (value:number) => void;
 
     /**
      * constructor
      * @param object link to unit object
      * @param unitAttack callback for unit attack
      */
-    public constructor(ind:number, object:Entity, avatar:Entity, unitAttack:()=>void)
+    public constructor(ind:number, object:Entity, avatar:Entity, unitAttack:(value:number)=>void, killUnit:(value:number, rewarded:boolean)=>void)
     {
         //assign index
         this.index = ind;
@@ -337,7 +348,8 @@ export class EnemyUnitSystem implements ISystem
         this.unitAvatar = avatar;
         this.unitObjectTransform = this.unitObject.getComponent(Transform);
         
-        //link event
+        //link events
+        this.killUnit = killUnit;
         this.onAttack = unitAttack;
     }
 
@@ -441,9 +453,14 @@ export class EnemyUnitSystem implements ISystem
                 if(this.attackTimer[0] <= 0)
                 {
                     if(GameState.debuggingEnemy) log("Enemy System "+this.index.toString()+": enemy attacking player base");
-                    //deal damage
+                    
+                    //deal damage based on type
                     this.hasDamaged = true;
-                    this.onAttack();
+                    if(EnemyData[this.type].SpawnType != 3) this.onAttack(1);
+                    else this.onAttack(10);
+
+                    //auto-kill enemy without reward
+                    this.killUnit(this.index, false);
                 }
             }  
             else

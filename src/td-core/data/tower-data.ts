@@ -29,184 +29,196 @@ export const dataTowers =
     //PROJECTILE TOWERS
     //  gun tower
     {
-        //model path
+        //asset
         Path:"ProjectileStandard",
         Offset:[0,0.3,0],
         Scale:[2,2,2],
+        //animations
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Bullet Tower",
-        DisplayDesc:"The perfect balance of power, speed, and range",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
-        //combat
-        ValueAttackDamage:12,       //damage per attack
-        ValueAttackPenetration:0,   //armor that is ignored on each attack
-        ValueAttackRend:0,        //armor that is removed from enemy upon attack
-        ValueAttackRange:2,         //radius of attack range
-        ValueAttackSpeed:100,         //time (100 = 1 second) for full attack cycle
-        //upgrades
-        Upgrades:
-        [
-            ["ValueAttackDamage", 25, 5, 2], //damage
-            ["ValueAttackPenetration", 30, 5, 2], //pen
-            ["ValueAttackRend", 30, 5, 2], //rend
-        ],
-        //mechanic
-        Attributes: ""
-    },
-    //  sniper tower
-    {
-        //model path
-        Path:"ProjectileSniper",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
-        //display
-        DisplayName:"Sniper Tower",
-        DisplayDesc:"High damage and armor penetration, but a slow rate of fire",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
-        //combat
+        DisplayDesc:"Balanced capabilities between power, speed, and range",
+        //stats
+        ValueCost:80,  //cost to build tower
         ValueAttackDamage:40,       //damage per attack
-        ValueAttackPenetration:10,   //armor that is ignored on each attack
-        ValueAttackRend:0.25,        //armor that is removed from enemy upon attack
-        ValueAttackRange:2,         //radius of attack range
-        ValueAttackSpeed:100,         //time in seconds for full attack cycle
+        ValueAttackPenetration:2,   //armor that is ignored on each attack
+        ValueAttackRend:0,        //armor that is removed from enemy upon attack
+        ValueAttackRange:2.2,         //radius of attack range
+        ValueAttackSpeed:0.8,         //attacks per second
         //upgrades
         Upgrades:
         [
-            ["ValueAttackDamage", 25, 5, 4], //damage
-            ["ValueAttackPenetration", 30, 5, 4], //pen
-            ["ValueAttackRend", 30, 5, 4], //rend
+            ["ValueAttackDamage", 10, 5, 4], //damage
+            ["ValueAttackSpeed", 20, 6, 0.05], //speed
+            ["ValueAttackPenetration", 15, 5, 1], //pen
         ],
-        //mechanic
-        Attributes: ""
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //  gatling tower
     {
-        //model path
+        //asset
         Path:"ProjectileGatling",
         Offset:[0,0.3,0],
         Scale:[2,2,2],
+        //animation details
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Gatling Tower",
         DisplayDesc:"Extremely fast rate of fire and decent armor rend, but lower damage",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
         //combat
-        ValueAttackDamage:4,       //damage per attack
-        ValueAttackPenetration:5,   //armor that is ignored on each attack
-        ValueAttackRend:2.5,        //armor that is removed from enemy upon attack
+        ValueCost:95,  //cost to build tower
+        ValueAttackDamage:18,       //damage per attack
+        ValueAttackPenetration:0,   //armor that is ignored on each attack
+        ValueAttackRend:1,        //armor that is removed from enemy upon attack
         ValueAttackRange:1.5,         //radius of attack range
-        ValueAttackSpeed:100,         //time in seconds for full attack cycle
+        ValueAttackSpeed:1.5,         //attacks per second
         //upgrades
         Upgrades:
         [
-            ["ValueAttackDamage", 25, 5, 1], //damage
-            ["ValueAttackPenetration", 30, 5, 1], //pen
+            ["ValueAttackSpeed", 20, 5, 0.15], //pen
+            ["ValueAttackPenetration", 15, 5, 1], //pen
             ["ValueAttackRend", 30, 5, 1], //rend
         ],
-        //mechanic
-        Attributes: ""
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
+    },
+    //  sniper tower
+    {
+        //asset
+        Path:"ProjectileSniper",
+        Offset:[0,0.3,0],
+        Scale:[2,2,2],
+        //animation details
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
+        //display
+        DisplayName:"Sniper Tower",
+        DisplayDesc:"High damage, range, and armor penetration, but a slow rate of fire",
+        //combat
+        ValueCost:140,  //cost to build tower
+        ValueAttackDamage:120,       //damage per attack
+        ValueAttackPenetration:10,   //armor that is ignored on each attack
+        ValueAttackRend:4,        //armor that is removed from enemy upon attack
+        ValueAttackRange:3,         //radius of attack range
+        ValueAttackSpeed:0.225,         //attacks per second
+        //upgrades
+        Upgrades:
+        [
+            ["ValueAttackDamage", 10, 5, 15], //damage
+            ["ValueAttackPenetration", 15, 5, 4], //pen
+            ["ValueAttackRange", 30, 5, 0.2], //range
+        ],
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
 
     //ELEMENTAL TOWERS 
     //  fire
     {
-        //model path
+        //asset
         Path:"ElementalFire",
         Offset:[0,0.3,0],
         Scale:[2,2,2],
+        //animation details
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Flamethrower Tower",
-        DisplayDesc:"Elemental Tower Desc",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
+        DisplayDesc:"Applies a burning effect that deals damage over time",
         //combat
-        ValueAttackDamage:6,       //damage per attack
+        ValueCost:120,  //cost to build tower
+        ValueAttackDamage:24,       //damage per attack
         ValueAttackPenetration:0,   //armor that is ignored on each attack
         ValueAttackRend:0,        //armor that is removed from enemy upon attack
-        ValueAttackRange:1,         //radius of attack range
-        ValueAttackSpeed:40,         //time (100 = 1 second) for full attack cycle
+        ValueAttackRange:1.4,         //radius of attack range
+        ValueAttackSpeed:0.6,         //attacks per second
         //upgrades
         Upgrades:
         [
-            ["ValueAttackDamage", 25, 5, 2], //damage
-            ["ValueAttackPenetration", 30, 5, 2], //pen
-            ["ValueAttackRend", 30, 5, 2], //rend
+            ["ValueAttackDamage", 10, 5, 2], //damage
+            ["ValueAttackSpeed", 30, 6, 0.1], //speed
+            //["ValueAttackRend", 30, 5, 2], //burn
         ],
-        //mechanic
-        Attributes: ""
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //  corrosion
     {
-        //model path
+        //asset
         Path:"ElementalAcid",
         Offset:[0,0.3,0],
         Scale:[2,2,2],
+        //animation details
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Corrosion Tower",
-        DisplayDesc:"Elemental Tower Desc",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
+        DisplayDesc:"Most effective at removing enemy armour",
         //combat
-        ValueAttackDamage:12,       //damage per attack
-        ValueAttackPenetration:0,   //armor that is ignored on each attack
-        ValueAttackRend:0,        //armor that is removed from enemy upon attack
-        ValueAttackRange:2,         //radius of attack range
-        ValueAttackSpeed:100,         //time (100 = 1 second) for full attack cycle
+        ValueCost:90,  //cost to build tower
+        ValueAttackDamage:26,       //damage per attack
+        ValueAttackPenetration:4,   //armor that is ignored on each attack
+        ValueAttackRend:8,        //armor that is removed from enemy upon attack
+        ValueAttackRange:1.4,         //radius of attack range
+        ValueAttackSpeed:0.4,         //attacks per second
         //upgrades
         Upgrades:
         [
-            ["ValueAttackDamage", 25, 5, 2], //damage
-            ["ValueAttackPenetration", 30, 5, 2], //pen
-            ["ValueAttackRend", 30, 5, 2], //rend
+            ["ValueAttackSpeed", 30, 5, 0.02], //damage
+            ["ValueAttackRend", 30, 5, 3], //rend
+            //["ValueAttackPenetration", 30, 5, 2], //acid
         ],
-        //mechanic
-        Attributes: ""
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     },
     //  electric
     {
-        //model path
+        //asset
         Path:"ElementalLightning",
         Offset:[0,0.3,0],
         Scale:[2,2,2],
+        //animation details
+        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Lightning Tower",
-        DisplayDesc:"Elemental Tower Desc",
-        //animation details
-        ValueAttackIntervalFull:0.8,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
-        //build
-        ValueCost:100,  //cost to build tower
+        DisplayDesc:"Chains damage between nearby targets",
         //combat
-        ValueAttackDamage:12,       //damage per attack
+        ValueCost:100,  //cost to build tower
+        ValueAttackDamage:14,       //damage per attack
         ValueAttackPenetration:0,   //armor that is ignored on each attack
         ValueAttackRend:0,        //armor that is removed from enemy upon attack
-        ValueAttackRange:2,         //radius of attack range
-        ValueAttackSpeed:100,         //time (100 = 1 second) for full attack cycle
+        ValueAttackRange:1.6,         //radius of attack range
+        ValueAttackSpeed:0.6,         //attacks per second
         //upgrades
         Upgrades:
         [
-            ["ValueAttackDamage", 25, 5, 2], //damage
-            ["ValueAttackPenetration", 30, 5, 2], //pen
-            ["ValueAttackRend", 30, 5, 2], //rend
+            ["ValueAttackDamage", 15, 5, 2], //damage
+            ["ValueAttackPenetration", 20, 5, 1], //pen
+            //["ValueAttackRend", 30, 5, 2], //chain
         ],
-        //mechanic
-        Attributes: ""
+        //mechanics
+        Attributes:
+        [
+            ""
+        ]
     }
 ]

@@ -1219,7 +1219,7 @@ export class GameMenu
             this.menuGroupTower.SetMenuText("selectionInfo", "penValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackPen.toString());
             this.menuGroupTower.SetMenuText("selectionInfo", "rendValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackRend.toString());
             this.menuGroupTower.SetMenuText("selectionInfo", "rangeValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackRange.toString());
-            this.menuGroupTower.SetMenuText("selectionInfo", "rofValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackSpeed.toString());
+            this.menuGroupTower.SetMenuText("selectionInfo", "rofValue", this.selectedTowerFoundation.TowerFrame.TowerSystem.attackPerSecond.toString());
 
             this.menuGroupTower.SetMenuText("selectionInfo", "targetLabel", "TARGETING:");
             this.menuGroupTower.SetMenuText("selectionInfo", "targetValue", this.targetTypeStrings[this.selectedTowerFoundation.TowerFrame.TowerSystem.TargetingType]);

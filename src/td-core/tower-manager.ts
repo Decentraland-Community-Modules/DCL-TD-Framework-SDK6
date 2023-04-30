@@ -6,7 +6,6 @@ import { List, Dictionary } from "src/utilities/collections";
 import { configTower, settingTower } from "./config/tower-config";
 import { dataTowers } from "./data/tower-data";
 import { TowerFoundation, TowerFrame } from "./tower-entity";
-import { TriggerComponent } from "@dcl/ecs-scene-utils";
 import { GameState } from "./game-states";
 export class TowerManager extends Entity 
 {
