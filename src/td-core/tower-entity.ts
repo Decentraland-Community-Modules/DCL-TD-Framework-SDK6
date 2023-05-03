@@ -326,6 +326,7 @@ export class TowerFrame extends Entity
     {
         //set index
         this.TowerDef = index;
+        this.TowerSystem.TowerDef = index;
 
         //display frame
         this.SetDisplayState(true);
@@ -450,6 +451,7 @@ export class TowerFrame extends Entity
  */
 export class TowerStructureSystem implements ISystem
 {
+    TowerDef:number = 0;
     //active data, derived from def and upgrade levels
     //  attack damage
     attackDamage:number = 0;
@@ -550,8 +552,13 @@ export class TowerStructureSystem implements ISystem
     }
 
     //callbacks
+    //  damage
     DamageEnemy:(index:number, dam:number, pen:number, rend:number) => void;
     private damageEnemy(index:number, dam:number, pen:number, rend:number) { log("TOWER SYSTEM: tower callback not set - damage enemy:"+index.toString()); }
+    //  effects
+    ApplyEffect:(index:number, type:number, power:number, length:number) => void;
+    private applyEffect(index:number, type:number, power:number, length:number) { log("TOWER SYSTEM: tower callback not set - apply effect:"+index.toString()); }
+
 
     //initializes unit upon object creation
     //  takes in index for this unit and starting waypoint
@@ -581,6 +588,7 @@ export class TowerStructureSystem implements ISystem
 
         //link event
         this.DamageEnemy = this.damageEnemy;
+        this.ApplyEffect = this.applyEffect;
     }
 
     //processing over time
@@ -633,6 +641,12 @@ export class TowerStructureSystem implements ISystem
                     {
                         if(GameState.debuggingTower) log("TOWER SYSTEM: attack completed, attack damage "+this.attackDamage.toString()+" dealt to target "+this.TowerTarget.Index.toString());
                         this.DamageEnemy(this.TowerTarget.Index, this.attackDamage, this.attackPen, this.attackRend);
+                        
+                        //apply effects
+                        for(var x:number=0; x<dataTowers[this.TowerDef].Attributes.length; x++)
+                        {
+                            this.ApplyEffect(this.TowerTarget.Index, dataTowers[this.TowerDef].Attributes[x][0], dataTowers[this.TowerDef].Attributes[x][1], dataTowers[this.TowerDef].Attributes[x][2]);
+                        }
                     }
                     else
                     {

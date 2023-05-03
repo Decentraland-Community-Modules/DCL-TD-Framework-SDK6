@@ -93,7 +93,10 @@ export class TowerManager extends Entity
     //  enemy damaged
     public DamageEnemy:(index:number, dam:number, pen:number, rend:number) => void;
     private damageEnemy(index:number, dam:number, pen:number, rend:number) { log("tower manager callback not set - damage enemy ("+index.toString()+")"); }
- 
+    //  apply effect
+    public ApplyEffect:(index:number, type:number, power:number, length:number) => void;
+    private applyEffect(index:number, type:number, power:number, length:number) { log("tower manager callback not set - apply effect:"+index.toString()); }
+
     /**
      * constructor
      */
@@ -144,6 +147,7 @@ export class TowerManager extends Entity
         this.SelectTower = this.selectTower;
         //  damage enemy
         this.DamageEnemy = this.damageEnemy;
+        this.ApplyEffect = this.applyEffect;
     }
 
     /**
@@ -217,6 +221,7 @@ export class TowerManager extends Entity
 
                     //link damage function
                     foundation.TowerFrame.TowerSystem.DamageEnemy = this.DamageEnemy;
+                    foundation.TowerFrame.TowerSystem.ApplyEffect = this.ApplyEffect;
                 }
             }
         }

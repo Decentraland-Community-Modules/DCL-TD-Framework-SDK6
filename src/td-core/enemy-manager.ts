@@ -105,7 +105,7 @@ export class EnemyUnitManager extends Entity
     {
         //create object
         const index:number = this.enemyList.size();
-        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath, this.callbackKillUnit);
+        const obj:EnemyUnitObject = new EnemyUnitObject(index, this.enemyHealthBarShapeCur, this.enemyTriggerShape, this.UnitAttack, this.UnitDeath, this.callbackKillUnit, this.callbackDamageUnit);
         obj.setParent(this);
         
         //add to collections
@@ -203,10 +203,31 @@ export class EnemyUnitManager extends Entity
      * @param rend amount of armour to be removed from unit
      * @returns boolean: true = unit alive, false = unit dead
      */
+    public callbackDamageUnit(index:number, dam:number, pen:number, rend:number):boolean
+    {
+        return EnemyUnitManager.Instance.DamageUnit(index, dam, pen, rend);
+    }
     public DamageUnit(index:number, dam:number, pen:number, rend:number):boolean
     {
         //access unit and pass call down
         return this.enemyDict.getItem(index.toString()).ApplyDamage(dam, pen, rend);
+    }
+
+    /**
+     * applies an effect on the enemy of the given index
+     * @param index access index of unit
+     * @param type type of effect applied
+     * @param power strength of applied effect
+     * @param length number of ticks effect lasts for
+     */
+    public callbackApplyEffect(index:number, type:number, power:number, length:number)
+    {
+        EnemyUnitManager.Instance.ApplyEffect(index, type, power, length);
+    }
+    public ApplyEffect(index:number, type:number, power:number, length:number)
+    {
+        //access unit and pass call down
+        this.enemyDict.getItem(index.toString()).unitSystem.AddEffect(type, power, length);
     }
 
     /**

@@ -107,9 +107,9 @@ export const EnemyData =
     //  walker
     {
         //model path
-        ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.5,0],
-        ObjectScale:[0.25,0.25,0.25],
+        ObjectPath:"enemyStandard",
+        ObjectOffset:[0,0.525,0],
+        ObjectScale:[0.2,0.2,0.2],
         HealthPos:[0,1,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
@@ -118,7 +118,7 @@ export const EnemyData =
         ValueDeathLength:1.4,   //length of death animation (in seconds)
         ValueDeathLengthScale:2,//speed of death animation
         //display
-        DisplayName:"Walker",
+        DisplayName:"Defender",
         DisplayDesc:"Standard unit",
         //spawning
         SpawnType:1,

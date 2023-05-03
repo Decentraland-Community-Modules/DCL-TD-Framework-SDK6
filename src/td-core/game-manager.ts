@@ -95,6 +95,7 @@ export class GameManager extends Entity
         TowerManager.Instance.GetSelectedTower = this.getSelectedTower;
         TowerManager.Instance.SelectTower = this.callbackTowerSelect;
         TowerManager.Instance.DamageEnemy = this.callbackEnemyUnitDamage;
+        TowerManager.Instance.ApplyEffect = EnemyUnitManager.Instance.callbackApplyEffect;
         TowerManager.Instance.GenerateTowerFoundations();
         TowerManager.Instance.setParent(this);
         //  enemy unit manager

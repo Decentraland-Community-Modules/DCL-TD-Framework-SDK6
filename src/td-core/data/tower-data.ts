@@ -7,22 +7,29 @@
     following animations should exist on the model and follow these parameters:
         -anim_attack: used when the tower is attacking an enemy
         -anim_idle: used when the tower is not attacking
-    animations should:
-        -start on frame 0
-        -have a lenght of exactly 1 second (48 frames in blender)
-        -anim_attack deals damage on frame 24
-    animation lengths are automatically scaled to the tower's rate of fire.
+    animations should start on frame 0
+
+    animation lengths are automatically scaled to the tower's rate of fire. 
 
     defence towers deal damage, apply debuffs to enemies, and buff ally towers.
     these factors can be further modified by providing upgrades for the tower.
     upgrades are number sets that define the cost, target, and effect of the 
     upgrade when purchased. 
-    NOTE: SYSTEM EXPECTS A MAX OF 3 UPGRADES AT THIS TIME
+    NOTE: SYSTEM EXPECTS A MAX OF 3 UPGRADES AT THIS TIME, to add more modify the menues
         [attr_target, purchase_cost, puchase_count, attr_effect]
     example:
         Upgrades [ ["ValueAttackSpeed", 200, 5, -10] ]
         creates an upgrade that costs 200 points, can be purchased 5 times,
         decreases the attack interval of the tower by 10% (increasing attack rate)
+    
+    'attributes' define what effects the tower applies on an enemy when it deals damage. these
+    effects are processed every 0.25s (ticks to reduce processing), so every 4 intervals is equal
+    to 1 second.
+    attribute entry: [type, power, length]
+        types: 0=slow %, 1=damage hp, 2=damange armour
+        power: value
+        length: number of ticks
+    example: [1, 10, 4] will cause 10 points of damage every tick for 4 ticks (40 DPS)
 */
 export const dataTowers =
 [
@@ -54,10 +61,7 @@ export const dataTowers =
             ["ValueAttackPenetration", 15, 5, 1], //pen
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ ]
     },
     //  gatling tower
     {
@@ -86,10 +90,7 @@ export const dataTowers =
             ["ValueAttackRend", 30, 5, 1], //rend
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ ]
     },
     //  sniper tower
     {
@@ -118,10 +119,7 @@ export const dataTowers =
             ["ValueAttackRange", 30, 5, 0.2], //range
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ ]
     },
 
     //ELEMENTAL TOWERS 
@@ -139,23 +137,20 @@ export const dataTowers =
         DisplayDesc:"Applies a burning effect that deals damage over time",
         //combat
         ValueCost:120,  //cost to build tower
-        ValueAttackDamage:24,       //damage per attack
+        ValueAttackDamage:12,       //damage per attack
         ValueAttackPenetration:0,   //armor that is ignored on each attack
         ValueAttackRend:0,        //armor that is removed from enemy upon attack
         ValueAttackRange:1.4,         //radius of attack range
-        ValueAttackSpeed:0.6,         //attacks per second
+        ValueAttackSpeed:1.2,         //attacks per second
         //upgrades
         Upgrades:
         [
             ["ValueAttackDamage", 10, 5, 2], //damage
             ["ValueAttackSpeed", 30, 6, 0.1], //speed
-            //["ValueAttackRend", 30, 5, 2], //burn
+            //["ValueAttackRend", 30, 5, 2], //burn increase
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ [1,2,12] ] //applies burn
     },
     //  corrosion
     {
@@ -171,23 +166,20 @@ export const dataTowers =
         DisplayDesc:"Most effective at removing enemy armour",
         //combat
         ValueCost:90,  //cost to build tower
-        ValueAttackDamage:26,       //damage per attack
+        ValueAttackDamage:13,       //damage per attack
         ValueAttackPenetration:4,   //armor that is ignored on each attack
-        ValueAttackRend:8,        //armor that is removed from enemy upon attack
+        ValueAttackRend:6,        //armor that is removed from enemy upon attack
         ValueAttackRange:1.4,         //radius of attack range
-        ValueAttackSpeed:0.4,         //attacks per second
+        ValueAttackSpeed:0.8,         //attacks per second
         //upgrades
         Upgrades:
         [
             ["ValueAttackSpeed", 30, 5, 0.02], //damage
             ["ValueAttackRend", 30, 5, 3], //rend
-            //["ValueAttackPenetration", 30, 5, 2], //acid
+            //["ValueAttackPenetration", 30, 5, 2], //acid intensify
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ [2,1,8] ] //applies armour melt
     },
     //  electric
     {
@@ -200,7 +192,7 @@ export const dataTowers =
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Lightning Tower",
-        DisplayDesc:"Chains damage between nearby targets",
+        DisplayDesc:"Applies a disruptive shock that slows enemies",
         //combat
         ValueCost:100,  //cost to build tower
         ValueAttackDamage:14,       //damage per attack
@@ -213,12 +205,9 @@ export const dataTowers =
         [
             ["ValueAttackDamage", 15, 5, 2], //damage
             ["ValueAttackPenetration", 20, 5, 1], //pen
-            //["ValueAttackRend", 30, 5, 2], //chain
+            //["ValueAttackRend", 30, 5, 2], //slow intensify
         ],
         //mechanics
-        Attributes:
-        [
-            ""
-        ]
+        Attributes: [ [0,30,40] ] //applies move slow
     }
 ]

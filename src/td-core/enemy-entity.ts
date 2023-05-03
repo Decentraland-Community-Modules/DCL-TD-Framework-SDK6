@@ -15,6 +15,7 @@ import { EnemyData } from "./data/enemy-data";
 import { GameState } from "./game-states";
 import { Waypoint, WaypointManager } from "./map-pathing";
 import { TowerStructureSystem } from "./tower-entity";
+import { List } from "src/utilities/collections";
 //object that represents an enemy in scene
 export class EnemyUnitObject extends Entity
 {
@@ -53,7 +54,12 @@ export class EnemyUnitObject extends Entity
      * @param unitAttack callback for unit attack
      * @param unitDeath callback for unit death
      */
-    public constructor(index:number, healthShapeCur:GLTFShape, triggerShape:TriggerBoxShape, unitAttack:(value:number)=>void, unitDeath:(index:number, rewarded:boolean)=>void, killUnit:(index:number, rewarded:boolean)=>void)
+    public constructor(index:number, healthShapeCur:GLTFShape, triggerShape:TriggerBoxShape, 
+        unitAttack:(value:number)=>void, 
+        unitDeath:(index:number, rewarded:boolean)=>void, 
+        unitKill:(index:number, rewarded:boolean)=>void,
+        unitDamage:(index:number, dam:number, pen:number, rend:number) => void
+    )
     {
         //object
         super();
@@ -90,7 +96,7 @@ export class EnemyUnitObject extends Entity
         this.unitAvatar.setParent(this);
 
         //unit system
-        this.unitSystem = new EnemyUnitSystem(this.Index, this, this.unitAvatar, unitAttack, killUnit);
+        this.unitSystem = new EnemyUnitSystem(this.Index, this, this.unitAvatar, unitAttack, unitKill, unitDamage);
 
         //trigger
         this.addComponent(
@@ -143,6 +149,7 @@ export class EnemyUnitObject extends Entity
         
         //set waypoints
         this.unitSystem.SetTarget(WaypointManager.Instance.GetSpawnPoint(), true);
+        this.unitSystem.unitMoveSpeedMod = 1;
         this.unitSystem.unitMoveSpeed = EnemyUnitObject.CalcMoveSpeed(type, GameState.WaveCur);
         this.unitSystem.attackLength = EnemyData[type].ValueAttackIntervalFull;
         this.unitSystem.attackDamagePeriod = EnemyData[type].ValueAttackIntervalDamage;
@@ -297,6 +304,7 @@ export class EnemyUnitSystem implements ISystem
     //  unit is at final waypoint/player base
     arrived:boolean = false;
     //  unit speed
+    unitMoveSpeedMod:number = 1;  
     unitMoveSpeed:number = 0.55;
     unitRotSpeed:number = 10;
     //  current waypoint 
@@ -328,8 +336,14 @@ export class EnemyUnitSystem implements ISystem
         this.animations[state].play();
     }
 
+    //effects
+    static activeEffectTickerLength:number = 0.25;
+    activeEffectTicker:number = 0;
+    activeEffects:List<EnemyEntityEffect> = new List<EnemyEntityEffect>();
+
     //callbacks
-    killUnit: (value:number, rewarded:boolean) => void;
+    unitKill: (value:number, rewarded:boolean) => void;
+    unitDamage: (index:number, dam:number, pen:number, rend:number) => void;
     onAttack: (value:number) => void;
 
     /**
@@ -337,7 +351,8 @@ export class EnemyUnitSystem implements ISystem
      * @param object link to unit object
      * @param unitAttack callback for unit attack
      */
-    public constructor(ind:number, object:Entity, avatar:Entity, unitAttack:(value:number)=>void, killUnit:(value:number, rewarded:boolean)=>void)
+    public constructor(ind:number, object:Entity, avatar:Entity, unitAttack:(value:number)=>void, killUnit:(value:number, rewarded:boolean)=>void, 
+        damageEnemy:(index:number, dam:number, pen:number, rend:number) => void)
     {
         //assign index
         this.index = ind;
@@ -349,7 +364,8 @@ export class EnemyUnitSystem implements ISystem
         this.unitObjectTransform = this.unitObject.getComponent(Transform);
         
         //link events
-        this.killUnit = killUnit;
+        this.unitKill = killUnit;
+        this.unitDamage = damageEnemy;
         this.onAttack = unitAttack;
     }
 
@@ -376,6 +392,13 @@ export class EnemyUnitSystem implements ISystem
         this.animator.addClip(this.animations[1]);
         this.animator.addClip(this.animations[2]);
         this.animator.addClip(this.animations[3]);
+
+        //clear effects
+        while(this.activeEffects.size() > 0)
+        {
+            this.activeEffects.removeItem(this.activeEffects.getItem(0));
+        }
+        this.activeEffectTicker = EnemyUnitSystem.activeEffectTickerLength;
     }
 
     /**
@@ -384,6 +407,18 @@ export class EnemyUnitSystem implements ISystem
      */
     update(dt: number) 
     {
+        //if there are effects
+        if(this.activeEffects.size() > 0)
+        {
+            //dec effect ticker
+            if(this.activeEffectTicker <= 0)
+            {
+                //process effects
+                this.ProcessEffects(true, true);
+                this.activeEffectTicker = EnemyUnitSystem.activeEffectTickerLength;
+            }
+        }
+
         //avatar is moving towards waypoint
         if(!this.arrived && this.waypoint != undefined && this.waypointTransform != undefined)
         {
@@ -398,7 +433,7 @@ export class EnemyUnitSystem implements ISystem
             {
                 //move unit toward destination
                 const forwardVector = Vector3.Forward().rotate(this.unitObjectTransform.rotation);
-                const increment = forwardVector.scale(dt * this.unitMoveSpeed);
+                const increment = forwardVector.scale(dt * this.unitMoveSpeed * this.unitMoveSpeedMod);
                 this.unitObjectTransform.translate(increment);
                 
                 //add to total distance travelled
@@ -460,7 +495,7 @@ export class EnemyUnitSystem implements ISystem
                     else this.onAttack(10);
 
                     //auto-kill enemy without reward
-                    this.killUnit(this.index, false);
+                    this.unitKill(this.index, false);
                 }
             }  
             else
@@ -505,5 +540,96 @@ export class EnemyUnitSystem implements ISystem
 
         //start traversal
         this.arrived = false;
+    }
+
+    //adds an effect to the unit
+    public AddEffect(type:number, power:number, length:number)
+    {
+        //check for existance
+        var found:boolean = false;
+        for(var i:number=0; i<this.activeEffects.size(); i++)
+        {
+            //over-write effect
+            if(this.activeEffects.getItem(i).Type == type)
+            {
+                this.activeEffects.getItem(i).Intialize(type, power, length);
+                found = true;
+                break;
+            }
+        }
+
+        //add new effect
+        if(!found)
+        {
+            this.activeEffects.addItem(new EnemyEntityEffect(type, power, length));
+        }
+        
+        //process effects
+        this.ProcessEffects(false, false);
+    }
+
+    //iterates through all effects
+    private selectedEffect:undefined|EnemyEntityEffect;//optimization
+    public ProcessEffects(isCounting:boolean, isDamaging:boolean)
+    {
+        //process effect
+        for(var i:number=0; i<this.activeEffects.size(); i++)
+        {
+            this.selectedEffect = this.activeEffects.getItem(i);
+            //
+            switch(this.selectedEffect.Type)
+            {
+                //slowing effect
+                case 0:
+                    this.unitMoveSpeedMod += this.selectedEffect.Power;
+                break;
+                //damage health
+                case 1:
+                    if(isDamaging) this.unitDamage(this.index, this.selectedEffect.Power, 50, 0);
+                break;
+                //damange armour
+                case 2:
+                    if(isDamaging) this.unitDamage(this.index, 0, 0, this.selectedEffect.Power);
+                break;
+            }
+
+            //count down time
+            if(isCounting)
+            {
+                //check expiry
+                this.selectedEffect.Length--;
+                if(this.selectedEffect.Length <= 0)
+                {
+                    //remove slowing
+                    if(this.selectedEffect.Type == 0) this.unitMoveSpeedMod = 100;
+                    //remove effect
+                    this.activeEffects.removeItem(this.selectedEffect);
+                }
+            }
+        }
+    }
+}
+
+//defines an active effect on an enemy
+class EnemyEntityEffect
+{
+    public Type:number;
+    public Power:number;
+    public Length:number;
+ 
+    //
+    constructor(type:number, power:number, length:number)
+    {
+        this.Type = type;
+        this.Power = power;
+        this.Length = length;
+    }
+    
+    //
+    public Intialize(type:number, power:number, length:number)
+    {
+        this.Type = type;
+        this.Power = power;
+        this.Length = length;
     }
 }
