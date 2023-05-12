@@ -38,13 +38,13 @@ export const dataTowers =
     {
         //asset
         Path:"ProjectileStandard",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.68,0],
+        Scale:[1,1,1],
         //animations
-        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
+        ValueAttackIntervalFull:10.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.4,//time point (in seconds) when damage should be dealt
         //display
-        DisplayName:"Bullet Tower",
+        DisplayName:"Dual-Barrel Tower",
         DisplayDesc:"Balanced capabilities between power, speed, and range",
         //stats
         ValueCost:80,  //cost to build tower
@@ -68,9 +68,9 @@ export const dataTowers =
         //asset
         Path:"ProjectileGatling",
         Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Scale:[1,1,1],
         //animation details
-        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalFull:2.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Gatling Tower",
@@ -97,7 +97,7 @@ export const dataTowers =
         //asset
         Path:"ProjectileSniper",
         Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Scale:[1,1,1],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -127,11 +127,11 @@ export const dataTowers =
     {
         //asset
         Path:"ElementalFire",
-        Offset:[0,0.3,0],
+        Offset:[0,0.5,0],
         Scale:[2,2,2],
         //animation details
-        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
+        ValueAttackIntervalFull:2.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.5,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Flamethrower Tower",
         DisplayDesc:"Applies a burning effect that deals damage over time",
@@ -159,8 +159,8 @@ export const dataTowers =
         Offset:[0,0.3,0],
         Scale:[2,2,2],
         //animation details
-        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
+        ValueAttackIntervalFull:2.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.5,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Corrosion Tower",
         DisplayDesc:"Most effective at removing enemy armour",
@@ -188,15 +188,15 @@ export const dataTowers =
         Offset:[0,0.3,0],
         Scale:[2,2,2],
         //animation details
-        ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
+        ValueAttackIntervalFull:2.0,  //full time interval (in seconds) for attack animation
+        ValueAttackIntervalDamage:0.5,//time point (in seconds) when damage should be dealt
         //display
         DisplayName:"Lightning Tower",
         DisplayDesc:"Applies a disruptive shock that slows enemies",
         //combat
         ValueCost:100,  //cost to build tower
-        ValueAttackDamage:14,       //damage per attack
-        ValueAttackPenetration:0,   //armor that is ignored on each attack
+        ValueAttackDamage:12,       //damage per attack
+        ValueAttackPenetration:3,   //armor that is ignored on each attack
         ValueAttackRend:0,        //armor that is removed from enemy upon attack
         ValueAttackRange:1.6,         //radius of attack range
         ValueAttackSpeed:0.6,         //attacks per second
@@ -208,6 +208,6 @@ export const dataTowers =
             //["ValueAttackRend", 30, 5, 2], //slow intensify
         ],
         //mechanics
-        Attributes: [ [0,30,40] ] //applies move slow
-    }
+        Attributes: [ [0,30,20] ] //applies move slow
+    },
 ]

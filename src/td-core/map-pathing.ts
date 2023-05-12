@@ -239,9 +239,9 @@ export class Waypoint extends Entity
             this.animator = this.DisplayObject.addComponent(new Animator());
             //  states
             this.animations = [];
-            this.animations.push(new AnimationState('anim_SpawnDisabled', { looping: true, speed: 1 }));
-            this.animations.push(new AnimationState('anim_SpawnEnabled', { looping: true, speed: 1 }));
-            this.animations.push(new AnimationState('anim_SpawnEndpoint', { looping: true, speed: 1 }));
+            this.animations.push(new AnimationState('anim_SpawnDisabled', { looping: false, speed: 1 }));
+            this.animations.push(new AnimationState('anim_SpawnEnabled', { looping: false, speed: 1 }));
+            this.animations.push(new AnimationState('anim_SpawnEndpoint', { looping: false, speed: 1 }));
             //  clips
             this.animator.addClip(this.animations[0]);
             this.animator.addClip(this.animations[1]);
@@ -249,7 +249,8 @@ export class Waypoint extends Entity
             //set default clip
             this.SetAnimationState(1);
         }
-        //if player base (currently just varient packed into spawner)
+        //if player base
+        //  NOTE: currently just varient packed into spawner, but this code snippet has been extended to allow for easy seperate object
         if(configPathing[this.Index].Type == 2)
         {
             //create display object

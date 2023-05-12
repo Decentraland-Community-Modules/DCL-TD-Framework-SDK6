@@ -21,22 +21,22 @@ export const configTower =
 [
     //top left
     {
-        GridLocation: [29.5, 0, 36.5],
-        GridSize: [5, 4]
+        GridLocation: [16.5, 0, 29.8],
+        GridSize: [4, 4]
     },
     //top right
     {
-        GridLocation: [36.5, 0, 36.5],
+        GridLocation: [22.5, 0, 29.8],
         GridSize: [4, 4]
     },
-    //center middle
+    //middle
     {
-        GridLocation: [30.5, 0, 30.5],
-        GridSize: [10, 4]
+        GridLocation: [20.5, 0, 23.7],
+        GridSize: [6, 4]
     },
     //bottom middle
     {
-        GridLocation: [30.5, 0, 24.5],
-        GridSize: [10, 4]
+        GridLocation: [22.5, 0, 18.9],
+        GridSize: [3, 3]
     }
 ]

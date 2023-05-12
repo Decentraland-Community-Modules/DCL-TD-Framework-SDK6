@@ -38,8 +38,9 @@ export class GameMenu
         //3D main menu
         this.menuGroupMainMenu = new MenuGroup3D();
         this.menuGroupMainMenu.SetColour(new Color3(1,0,1));
-        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(44,0,32));
-        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,90,0));
+        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(22,6,40.6));
+        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(-35,0,0));
+        this.menuGroupMainMenu.groupParent.getComponent(Transform).scale = new Vector3(2.5,2.5,2.5);
         this.menuMainSetup();
 
         //3D tower menu
@@ -51,7 +52,7 @@ export class GameMenu
         //3D info menu
         this.menuGroupSceneInfo = new MenuGroup3D();
         this.menuGroupSceneInfo.SetColour(new Color3(1,0,1));
-        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(20,0,20));
+        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(14,0,15.6));
         this.menuGroupSceneInfo.AdjustMenuParent(2,new Vector3(0,0,0));
         this.menuTutorialSetup();
     }
@@ -195,7 +196,7 @@ export class GameMenu
                 {
                     this.SetDifficulty(GameState.DifficultyCur-1);
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "INCREASE DIFFICULTY", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "DECREASE DIFFICULTY", distance: 32 }
             )
         );
         //  difficulty next label
@@ -216,7 +217,7 @@ export class GameMenu
                 {
                     this.SetDifficulty(GameState.DifficultyCur+1);
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "INCREASE DIFFICULTY", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "INCREASE DIFFICULTY", distance: 32 }
             )
         );
         //  difficulty next label
@@ -238,7 +239,7 @@ export class GameMenu
                     this.SetTowerMenuState(false);
                     this.GameStart(); 
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "START GAME", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "START GAME", distance: 32 }
             )
         );
         //  game start label
@@ -299,7 +300,7 @@ export class GameMenu
                     this.SetTowerMenuState(false);
                     this.WaveStart(); 
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "START WAVE", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "START WAVE", distance: 32 }
             )
         );
         //  wave start label
@@ -321,7 +322,7 @@ export class GameMenu
                     this.SetTowerMenuState(false);
                     this.GameReset(); 
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 32 }
             )
         );
         //  game reset label
@@ -366,7 +367,7 @@ export class GameMenu
                     this.SetTowerMenuState(false);
                     this.GameReset(); 
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 32 }
             )
         );
         //  game reset label
@@ -411,7 +412,7 @@ export class GameMenu
                     this.SetTowerMenuState(false);
                     this.GameReset(); 
                 },
-                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 16 }
+                { button: ActionButton.ANY, showFeedback: true, hoverText: "RESET GAME", distance: 32 }
             )
         );
         //  game reset label
@@ -1410,7 +1411,7 @@ export class GameMenu
                   button: ActionButton.ANY,
                   showFeedback: true,
                   hoverText: "[E] Public Repository",
-                  distance: 8
+                  distance: 16
                 }
             )
         );
@@ -1435,7 +1436,7 @@ export class GameMenu
                   button: ActionButton.ANY,
                   showFeedback: true,
                   hoverText: "[E] DAO Proposal",
-                  distance: 8
+                  distance: 16
                 }
             )
         );

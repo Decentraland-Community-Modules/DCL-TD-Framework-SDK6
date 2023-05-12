@@ -184,6 +184,9 @@ export class EnemyUnitManager extends Entity
         //disable enemy
         obj.SetEngineState(false);
 
+        //NOTE: debugging override to change unit types that are spawned
+        //type = 3;
+
         //initialize with new data
         obj.Initialize(type, waypoint, this.enemyModelDict.getItem(type.toString()));
         this.enemySizeCur++;

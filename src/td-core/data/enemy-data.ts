@@ -41,9 +41,9 @@ export const EnemyData =
     {
         //object
         ObjectPath:"enemyCrawler",
-        ObjectOffset:[0,0.1,0],
+        ObjectOffset:[0,0.48,0],
         ObjectScale:[0.05,0.05,0.05],
-        HealthPos:[0,0.5,0],
+        HealthPos:[0,0.8,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -74,9 +74,9 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyDrone",
-        ObjectOffset:[0,0.5,0],
+        ObjectOffset:[0,0.7,0],
         ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,1,0],
+        HealthPos:[0,1.2,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -110,7 +110,7 @@ export const EnemyData =
         ObjectPath:"enemyStandard",
         ObjectOffset:[0,0.525,0],
         ObjectScale:[0.2,0.2,0.2],
-        HealthPos:[0,1,0],
+        HealthPos:[0,1.2,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -142,9 +142,9 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.15,0],
+        ObjectOffset:[0,0.525,0],
         ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,0.75,0],
+        HealthPos:[0,1.2,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -176,9 +176,9 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.5,0],
+        ObjectOffset:[0,0.525,0],
         ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,1,0],
+        HealthPos:[0,1.2,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -209,9 +209,9 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.5,0],
+        ObjectOffset:[0,0.525,0],
         ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,1,0],
+        HealthPos:[0,1.2,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation

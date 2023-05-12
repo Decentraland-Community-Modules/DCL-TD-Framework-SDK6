@@ -11,7 +11,7 @@ export class GameState
     public static debuggingManager = false;
     public static debuggingPath = false;
     //  tower
-    public static debuggingTower = false;
+    public static debuggingTower = true;
     //  enemy
     public static debuggingEnemy = false;
     public static debuggingWave = false;

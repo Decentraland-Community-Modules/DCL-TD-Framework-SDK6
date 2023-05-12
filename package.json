@@ -1,7 +1,7 @@
 {
-  "name": "dcl-tower-defence-creation-kit",
+  "name": "dcl-tower-defence-factory",
   "version": "1.0.0",
-  "description": "DCL Tower Defence Creation Kit",
+  "description": "DCL Tower Defence Factory",
   "scripts": {
     "start": "dcl start",
     "build": "build-ecs",
