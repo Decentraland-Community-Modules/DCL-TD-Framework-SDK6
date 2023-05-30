@@ -17,7 +17,7 @@ GameManager.Instance.GameReset();
 //prepare game environment
 //  framing
 const environ:Entity = new Entity();
-environ.addComponent(new GLTFShape("models/environment/envLowPoly.glb"));
+environ.addComponent(new GLTFShape("models/environment/stageShippingPacked.glb"));
 environ.addComponent(new Transform
 ({
     position: new Vector3(0,0,0),

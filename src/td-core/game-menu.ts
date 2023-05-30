@@ -38,8 +38,8 @@ export class GameMenu
         //3D main menu
         this.menuGroupMainMenu = new MenuGroup3D();
         this.menuGroupMainMenu.SetColour(new Color3(1,0,1));
-        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(44,0,32));
-        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,90,0));
+        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(35.5, 0, 51));
+        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,0,0));
         this.menuMainSetup();
 
         //3D tower menu
@@ -51,8 +51,8 @@ export class GameMenu
         //3D info menu
         this.menuGroupSceneInfo = new MenuGroup3D();
         this.menuGroupSceneInfo.SetColour(new Color3(1,0,1));
-        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(20,0,20));
-        this.menuGroupSceneInfo.AdjustMenuParent(2,new Vector3(0,0,0));
+        this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(35.5, 5.4, 93));
+        this.menuGroupSceneInfo.AdjustMenuParent(2,new Vector3(0,135,0));
         this.menuTutorialSetup();
     }
 
@@ -1366,32 +1366,33 @@ export class GameMenu
         //  button other scenes
         for(var i:number=0; i<this.stringsSceneNames.length; i++)
         {
-            const pos:Vector3 = new Vector3(((i%3)-1)*0.66,-0.075,0);
+            const index:number = i;
+            const pos:Vector3 = new Vector3(((index%3)-1)*0.66,-0.075,0);
             //  button creator object
-            this.menuGroupSceneInfo.AddMenuObject("buttonScene"+i, 5, "infoFrame");
-            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 0, pos);
-            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 1, new Vector3(0.22,0.18,0.2));
-            /*this.menuGroupSceneInfo.GetMenuObject("buttonScene"+i).addComponent
+            this.menuGroupSceneInfo.AddMenuObject("buttonScene"+index, 5, "infoFrame");
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+index, 0, pos);
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+index, 1, new Vector3(0.22,0.18,0.2));
+            this.menuGroupSceneInfo.GetMenuObject("buttonScene"+index).addComponent
             (
                 new OnPointerDown
                 (
                     (e) =>
                     {
-                    //open link
-                    openExternalURL("");
+                        //open link
+                        openExternalURL(this.stringsSceneURLs[index]);
                     },
                     {
                     button: ActionButton.ANY,
                     showFeedback: true,
-                    hoverText: "[E] CREATOR_NAME_"+i,
+                    hoverText: "[E] Join Map: "+this.stringsSceneNames[index],
                     distance: 8
                     }
                 )
-            );*/
+            );
             //  button creator text
-            this.menuGroupSceneInfo.AddMenuText("buttonScene"+i, "buttonText", this.stringsSceneNames[i]);
-            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+i, "buttonText", 0, new Vector3(0,0,-0.031));
-            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+i, "buttonText", 1, new Vector3(0.34,0.42,0.03));
+            this.menuGroupSceneInfo.AddMenuText("buttonScene"+index, "buttonText", this.stringsSceneNames[index]);
+            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+index, "buttonText", 0, new Vector3(0,0,-0.031));
+            this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+index, "buttonText", 1, new Vector3(0.34,0.42,0.03));
         }
         //  button repo object
         this.menuGroupSceneInfo.AddMenuObject("buttonRepo", 5, "infoFrame");
@@ -1476,32 +1477,33 @@ export class GameMenu
         //generate creator linkages
         for(var i:number=0; i<this.stringsCreators.length; i++)
         {
-            const pos:Vector3 = new Vector3(((i%4)-1.5)*0.61,-0.38-(Math.round(i/8)*0.235),0);
+            const index:number = i;
+            const pos:Vector3 = new Vector3(((index%4)-1.5)*0.61,-0.38-(Math.round(index/8)*0.235),0);
             //  button creator object
-            this.menuGroupSceneInfo.AddMenuObject("buttonCreator"+i, 5, "creditFrame");
-            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 0, pos);
-            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 1, new Vector3(0.22,0.2,0.2));
-            /*this.menuGroupSceneInfo.GetMenuObject("buttonCreator"+i).addComponent
+            this.menuGroupSceneInfo.AddMenuObject("buttonCreator"+index, 5, "creditFrame");
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+index, 0, pos);
+            this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+index, 1, new Vector3(0.22,0.2,0.2));
+            /*this.menuGroupSceneInfo.GetMenuObject("buttonCreator"+index).addComponent
             (
                 new OnPointerDown
                 (
                     (e) =>
                     {
-                    //open link
-                    openExternalURL("");
+                        //open link
+                        //openExternalURL();
                     },
                     {
                     button: ActionButton.ANY,
                     showFeedback: true,
-                    hoverText: "[E] CREATOR_NAME_"+i,
+                    hoverText: "[E] CREATOR_NAME_"+index,
                     distance: 8
                     }
                 )
             );*/
-            //  button creator text
-            this.menuGroupSceneInfo.AddMenuText("buttonCreator"+i, "buttonText", this.stringsCreators[i]);
-            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+i, "buttonText", 0, new Vector3(0,0,-0.031));
-            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+i, "buttonText", 1, new Vector3(0.30,0.30,0.03));
+            // button creator text
+            this.menuGroupSceneInfo.AddMenuText("buttonCreator"+index, "buttonText", this.stringsCreators[index]);
+            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+index, "buttonText", 0, new Vector3(0,0,-0.031));
+            this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+index, "buttonText", 1, new Vector3(0.30,0.30,0.03));
         }
 
         //activate menu by default
@@ -1510,14 +1512,14 @@ export class GameMenu
     private stringsSceneNames:string[] = 
     [
         "TD Factory",
-        "TD Shipyard",
+        "TD Tutorial",
         "TD Neon City",
     ];
     private stringsSceneURLs:string[] = 
     [
-        "//",
-        "//",
-        "//",
+        "https://play.decentraland.org/?realm=https%3A%2F%2Fworlds-content-server.decentraland.org%2Fworld%2FtdFactory.dcl.eth",
+        "https://play.decentraland.org/?realm=https%3A%2F%2Fworlds-content-server.decentraland.org%2Fworld%2FtdTutorial.dcl.eth",
+        "https://play.decentraland.org/?realm=https%3A%2F%2Fworlds-content-server.decentraland.org%2Fworld%2FtdCity.dcl.eth",
     ];
     private stringsCreators:string[] = 
     [

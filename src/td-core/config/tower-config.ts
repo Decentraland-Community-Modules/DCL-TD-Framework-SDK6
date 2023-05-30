@@ -19,24 +19,60 @@ export const settingTower =
 ]
 export const configTower =
 [
-    //top left
+    //lower back left
     {
-        GridLocation: [29.5, 0, 36.5],
-        GridSize: [5, 4]
+        GridLocation: [33, 0, 37.5],
+        GridSize: [2, 2]
     },
-    //top right
+    //lower back right
     {
-        GridLocation: [36.5, 0, 36.5],
-        GridSize: [4, 4]
+        GridLocation: [37, 0, 37.5],
+        GridSize: [2, 2]
     },
-    //center middle
+    //lower forward left
     {
-        GridLocation: [30.5, 0, 30.5],
-        GridSize: [10, 4]
+        GridLocation: [24.75, 0, 41.5],
+        GridSize: [2, 2]
     },
-    //bottom middle
     {
-        GridLocation: [30.5, 0, 24.5],
-        GridSize: [10, 4]
-    }
+        GridLocation: [29, 0, 41.5],
+        GridSize: [2, 2]
+    },
+    //lower forward right 
+    {
+        GridLocation: [40.5, 0, 41.5],
+        GridSize: [2, 2]
+    },
+    {
+        GridLocation: [45, 0, 41.5],
+        GridSize: [2, 2]
+    },
+    //upper back left
+    {
+        GridLocation: [24.75, 5, 74.5],
+        GridSize: [2, 2]
+    },
+    {
+        GridLocation: [29, 5, 74.5],
+        GridSize: [2, 2]
+    },
+    //upper back right
+    {
+        GridLocation: [40.5, 5, 74.5],
+        GridSize: [2, 2]
+    },
+    {
+        GridLocation: [45, 5, 74.5],
+        GridSize: [2, 2]
+    },
+    //upper forward left
+    {
+        GridLocation: [33, 5, 78.5],
+        GridSize: [2, 2]
+    },
+    //upper forward right
+    {
+        GridLocation: [37, 5, 78.5],
+        GridSize: [2, 2]
+    },
 ]
