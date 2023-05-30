@@ -13,37 +13,48 @@ export const configSpawners =
         actions:
         [
             //index of targeted spawn & state to set (0=off, 1=on)
-            {index: 3, state: 1},
+            {index: 3, state: 0},
             {index: 7, state: 0},
             {index: 11, state: 0},
             {index: 15, state: 0},
-            {index: 17, state: 0},
+            {index: 17, state: 1},
         ]
     },
     {
         wave: 6,
         actions:
         [
-            {index: 3, state: 1},
-            {index: 7, state: 1},
-            {index: 11, state: 1},
-            {index: 15, state: 0},
-            {index: 17, state: 0},
+            {index: 3, state: 0},
+            {index: 7, state: 0},
+            {index: 11, state: 0},
+            {index: 15, state: 1},
+            {index: 17, state: 1},
         ]
     },
     {
-        wave: 12,
+        wave: 11,
         actions:
         [
-            {index: 3, state: 1},
-            {index: 7, state: 1},
+            {index: 3, state: 0},
+            {index: 7, state: 0},
             {index: 11, state: 1},
             {index: 15, state: 1},
-            {index: 17, state: 0},
+            {index: 17, state: 1},
         ]
     },
     {
         wave: 16,
+        actions:
+        [
+            {index: 3, state: 0},
+            {index: 7, state: 1},
+            {index: 11, state: 1},
+            {index: 15, state: 1},
+            {index: 17, state: 1},
+        ]
+    },
+    {
+        wave: 21,
         actions:
         [
             {index: 3, state: 1},

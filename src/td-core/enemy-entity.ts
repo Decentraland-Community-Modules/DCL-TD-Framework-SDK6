@@ -437,7 +437,7 @@ export class EnemyUnitSystem implements ISystem
                 this.unitObjectTransform.translate(increment);
                 
                 //add to total distance travelled
-                this.distanceTotal -= dt*this.unitMoveSpeed;
+                this.distanceTotal -= dt * this.unitMoveSpeed * this.unitMoveSpeedMod;
                 //log("ID:"+this.index.toString()+", distance:"+this.distanceTotal.toString());
             }
             //avatar has reached target waypoint
@@ -581,7 +581,7 @@ export class EnemyUnitSystem implements ISystem
             {
                 //slowing effect
                 case 0:
-                    this.unitMoveSpeedMod += this.selectedEffect.Power;
+                    this.unitMoveSpeedMod = 1 - (this.selectedEffect.Power/100);
                 break;
                 //damage health
                 case 1:
@@ -601,7 +601,7 @@ export class EnemyUnitSystem implements ISystem
                 if(this.selectedEffect.Length <= 0)
                 {
                     //remove slowing
-                    if(this.selectedEffect.Type == 0) this.unitMoveSpeedMod = 100;
+                    if(this.selectedEffect.Type == 0) this.unitMoveSpeedMod = 1;
                     //remove effect
                     this.activeEffects.removeItem(this.selectedEffect);
                 }
