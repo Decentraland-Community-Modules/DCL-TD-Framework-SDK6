@@ -40,15 +40,15 @@ export const EnemyData =
     //  swarmer
     {
         //object
-        ObjectPath:"enemyCrawler",
-        ObjectOffset:[0,0.1,0],
+        ObjectPath:"enemySmall",
+        ObjectOffset:[0,0.11,0],
         ObjectScale:[0.05,0.05,0.05],
-        HealthPos:[0,0.5,0],
+        HealthPos:[0,0.8,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
-        ValueDeathLength:1.4,   //length of death animation (in seconds)
+        ValueAttackIntervalDamage:1.8,//time point (in seconds) when damage should be dealt
+        ValueDeathLength:2,   //length of death animation (in seconds)
         ValueDeathLengthScale:2,//speed of death animation
         //display
         DisplayName:"Crawler",
@@ -73,10 +73,10 @@ export const EnemyData =
     //  drone
     {
         //model path
-        ObjectPath:"enemyDrone",
-        ObjectOffset:[0,0.5,0],
-        ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,1,0],
+        ObjectPath:"enemyFlying",
+        ObjectOffset:[0,0.11,0],
+        ObjectScale:[0.05,0.05,0.05],
+        HealthPos:[0,0.8,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
         ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
@@ -108,8 +108,8 @@ export const EnemyData =
     {
         //model path
         ObjectPath:"enemyStandard",
-        ObjectOffset:[0,0.525,0],
-        ObjectScale:[0.2,0.2,0.2],
+        ObjectOffset:[0,0.2,0],
+        ObjectScale:[0.05,0.05,0.05],
         HealthPos:[0,1,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
@@ -141,9 +141,9 @@ export const EnemyData =
     //  bruiser
     {
         //model path
-        ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.15,0],
-        ObjectScale:[0.25,0.25,0.25],
+        ObjectPath:"enemyLarge",
+        ObjectOffset:[0,0.2,0],
+        ObjectScale:[0.05,0.05,0.05],
         HealthPos:[0,0.75,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
@@ -175,9 +175,9 @@ export const EnemyData =
     //  champion
     {
         //model path
-        ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.5,0],
-        ObjectScale:[0.25,0.25,0.25],
+        ObjectPath:"enemyBoss",
+        ObjectOffset:[0,0.2,0],
+        ObjectScale:[0.05,0.05,0.05],
         HealthPos:[0,1,0],
         HealthScale:[0.25,0.25,0.25],
         //timing
@@ -199,39 +199,6 @@ export const EnemyData =
         ValueArmourGrowth:2.5,
         //rewards
         ValueRewards:25,
-        //mechanics
-        Attributes:
-        [
-            ""
-        ]
-    },
-    //  Spawner
-    {
-        //model path
-        ObjectPath:"enemyBruiser",
-        ObjectOffset:[0,0.5,0],
-        ObjectScale:[0.25,0.25,0.25],
-        HealthPos:[0,1,0],
-        HealthScale:[0.25,0.25,0.25],
-        //timing
-        ValueAttackIntervalFull:2,  //full time interval (in seconds) for attack animation
-        ValueAttackIntervalDamage:1,//time point (in seconds) when damage should be dealt
-        ValueDeathLength:1.4,   //length of death animation (in seconds)
-        ValueDeathLengthScale:2,//speed of death animation
-        //display
-        DisplayName:"Mobile Spawner",
-        DisplayDesc:"Periodically spawns enemies around the unit",
-        //spawning
-        SpawnType:3,
-        SpawnCost:50,
-        //survival
-        ValueSpeed:0.25,
-        ValueHealthBase:250,
-        ValueHealthGrowth:12,
-        ValueArmourBase:50,
-        ValueArmourGrowth:1,
-        //rewards
-        ValueRewards:35,
         //mechanics
         Attributes:
         [

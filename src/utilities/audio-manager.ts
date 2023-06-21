@@ -30,7 +30,7 @@ export class AudioManager extends Entity
         super();
         this.addComponent(new Transform
         ({
-            position: new Vector3(32,20,32),
+            position: new Vector3(16,8,16),
             scale: new Vector3(1,1,1),
             rotation: new Quaternion().setEuler(0,0,0)
         }));

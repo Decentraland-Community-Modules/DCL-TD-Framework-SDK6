@@ -38,8 +38,8 @@ export const dataTowers =
     {
         //asset
         Path:"ProjectileStandard",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animations
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -67,8 +67,8 @@ export const dataTowers =
     {
         //asset
         Path:"ProjectileGatling",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -96,8 +96,8 @@ export const dataTowers =
     {
         //asset
         Path:"ProjectileSniper",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -127,8 +127,8 @@ export const dataTowers =
     {
         //asset
         Path:"ElementalFire",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -156,8 +156,8 @@ export const dataTowers =
     {
         //asset
         Path:"ElementalAcid",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt
@@ -185,8 +185,8 @@ export const dataTowers =
     {
         //asset
         Path:"ElementalLightning",
-        Offset:[0,0.3,0],
-        Scale:[2,2,2],
+        Offset:[0,0.05,0],
+        Scale:[0.4,0.4,0.4],
         //animation details
         ValueAttackIntervalFull:1.0,  //full time interval (in seconds) for attack animation
         ValueAttackIntervalDamage:0.3,//time point (in seconds) when damage should be dealt

@@ -13,24 +13,55 @@ export const configSpawners =
         actions:
         [
             //index of targeted spawn & state to set (0=off, 1=on)
-            {index: 7, state: 1},
-            {index: 9, state: 1},
-        ]
-    },
-    {
-        wave: 1,
-        actions:
-        [
-            {index: 7, state: 1},
+            {index: 3, state: 0},
+            {index: 4, state: 0},
+            {index: 7, state: 0},
             {index: 9, state: 0},
+            {index: 11, state: 1},
         ]
     },
     {
-        wave: 2,
+        wave: 4,
         actions:
         [
+            {index: 3, state: 0},
+            {index: 4, state: 0},
+            {index: 7, state: 0},
+            {index: 9, state: 1},
+            {index: 11, state: 1},
+        ]
+    },
+    {
+        wave: 8,
+        actions:
+        [
+            {index: 3, state: 0},
+            {index: 4, state: 0},
             {index: 7, state: 1},
             {index: 9, state: 1},
+            {index: 11, state: 1},
+        ]
+    },
+    {
+        wave: 12,
+        actions:
+        [
+            {index: 3, state: 0},
+            {index: 4, state: 1},
+            {index: 7, state: 1},
+            {index: 9, state: 1},
+            {index: 11, state: 1},
+        ]
+    },
+    {
+        wave: 16,
+        actions:
+        [
+            {index: 3, state: 1},
+            {index: 4, state: 1},
+            {index: 7, state: 1},
+            {index: 9, state: 1},
+            {index: 11, state: 1},
         ]
     },
 ]
@@ -51,62 +82,62 @@ export const configPathing =
         Index:  0,
         Type: 2,
         Target: [],
-        Scale:  [1, 1, 1],
-        Position: [29, 0, 23],
-        Rotation: [0, 0, 0],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [10.6, 0, 16],
+        Rotation: [0, 180, 0],
     },
-    //  corner
+    //  fork 1
     {
         Index:  1,
         Type: 0,
         Target: [0],
         Scale:  [1, 1, 1],
-        Position: [41, 0, 23],
+        Position: [16, 0, 16],
         Rotation: [0, 0, 0],
     },
-    //  corner
+    //  split down
     {
         Index:  2,
         Type: 0,
         Target: [1],
         Scale:  [1, 1, 1],
-        Position: [41, 0, 29],
+        Position: [16, 0, 8.8],
         Rotation: [0, 0, 0],
     },
-    //  corner
+    //  spawn
     {
         Index:  3,      
-        Type: 0,
+        Type: 1,
         Target: [2],
-        Scale:  [1, 1, 1],
-        Position: [29, 0, 29],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [19.95, 0, 8.8],
         Rotation: [0, 0, 0],
     },
-    //  corner
+    //  spawn
     {
         Index:  4,      
-        Type: 0,
-        Target: [3],
-        Scale:  [1, 1, 1],
-        Position: [29, 0, 35],
-        Rotation: [0, 0, 0],
+        Type: 1,
+        Target: [2],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [16, 0, 4.85],
+        Rotation: [0, 90, 0],
     },
-    //  split 1
+    //  split forward, fork 2
     {
         Index:  5,
         Type: 0,
-        Target: [4],
+        Target: [1],
         Scale:  [1, 1, 1],
-        Position: [35, 0, 35],
+        Position: [21.4, 0, 16],
         Rotation: [0, 0, 0],
     },
-    //  split 1, fork 1
+    //  split down
     {
         Index:  6,
         Type: 0,
         Target: [5],
         Scale:  [1, 1, 1],
-        Position: [41, 0, 35],
+        Position: [21.4, 0, 12.4],
         Rotation: [0, 0, 0],
     },
     //  spawnpoint
@@ -114,26 +145,44 @@ export const configPathing =
         Index:  7,
         Type: 1,
         Target: [6],
-        Scale:  [1, 1, 1],
-        Position: [41, 0, 41],
-        Rotation: [0, 0, 0],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [19.25, 0, 12.4],
+        Rotation: [0, 180, 0],
     },
-    //  split 1, fork 2
+    //  split up, fork
     {
         Index:  8,
         Type: 0,
         Target: [5],
         Scale:  [1, 1, 1],
-        Position: [35, 0, 41],
+        Position: [21.4, 0, 21.4],
         Rotation: [0, 0, 0],
     },
-    //  spawnpoint
+    //  split back, spawnpoint
     {
         Index:  9,
         Type: 1,
         Target: [8],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [13.85, 0, 21.4],
+        Rotation: [0, 180, 0],
+    },
+    //  split right, corner
+    {
+        Index:  10,
+        Type: 0,
+        Target: [8],
         Scale:  [1, 1, 1],
-        Position: [29, 0, 41],
+        Position: [25, 0, 21.4],
         Rotation: [0, 0, 0],
+    },
+    //  spawnpoint
+    {
+        Index:  11,
+        Type: 1,
+        Target: [10],
+        Scale:  [3.6, 3.6, 3.6],
+        Position: [25.0125, 0, 18.34],
+        Rotation: [0, 90, 0],
     },
 ]

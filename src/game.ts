@@ -16,12 +16,42 @@ GameManager.Instance.GameReset();
 
 //prepare game environment
 //  framing
-const environ:Entity = new Entity();
-environ.addComponent(new GLTFShape("models/environment/envLowPoly.glb"));
-environ.addComponent(new Transform
+const envFrame:Entity = new Entity();
+envFrame.addComponent(new GLTFShape("models/environment/envFrame.glb"));
+envFrame.addComponent(new Transform
 ({
-    position: new Vector3(0,0,0),
-    scale: new Vector3(1,1,1),
+    position: new Vector3(16,0,16),
+    scale: new Vector3(2,2,2),
     rotation: new Quaternion().setEuler(0,0,0)
 }));
-engine.addEntity(environ);
+engine.addEntity(envFrame);
+//  grid
+const envGrid:Entity = new Entity();
+envGrid.addComponent(new GLTFShape("models/environment/envGrid.glb"));
+envGrid.addComponent(new Transform
+({
+    position: new Vector3(16,0,16),
+    scale: new Vector3(2,2,2),
+    rotation: new Quaternion().setEuler(0,0,0)
+}));
+engine.addEntity(envGrid);
+//  pathing
+const envPathing:Entity = new Entity();
+envPathing.addComponent(new GLTFShape("models/environment/envPathing.glb"));
+envPathing.addComponent(new Transform
+({
+    position: new Vector3(16,0,16),
+    scale: new Vector3(2,2,2),
+    rotation: new Quaternion().setEuler(0,0,0)
+}));
+engine.addEntity(envPathing);
+//  cluttering
+const envClutter:Entity = new Entity();
+envClutter.addComponent(new GLTFShape("models/environment/envClutter.glb"));
+envClutter.addComponent(new Transform
+({
+    position: new Vector3(16,0,16),
+    scale: new Vector3(2,2,2),
+    rotation: new Quaternion().setEuler(0,0,0)
+}));
+engine.addEntity(envClutter);

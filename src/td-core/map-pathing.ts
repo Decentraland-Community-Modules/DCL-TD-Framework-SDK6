@@ -223,6 +223,7 @@ export class Waypoint extends Entity
         {
             //create preview object
             this.addComponent(new BoxShape());
+            this.getComponent(Transform).scale = new Vector3(0.2, 1, 0.2);
             this.getComponent(BoxShape).withCollisions = false;
         }
 
@@ -232,7 +233,7 @@ export class Waypoint extends Entity
             //create display object
             this.DisplayObject = new Entity();
             this.DisplayObject.setParent(this);
-            this.DisplayObject.addComponent(new GLTFShape("models/pathingSpawner.glb"));
+            this.DisplayObject.addComponent(new GLTFShape("models/enemy/core/enemySpawner.glb"));
 
             //animations
             //  controller
@@ -255,7 +256,7 @@ export class Waypoint extends Entity
             //create display object
             this.DisplayObject = new Entity();
             this.DisplayObject.setParent(this);
-            this.DisplayObject.addComponent(new GLTFShape("models/pathingSpawner.glb"));
+            this.DisplayObject.addComponent(new GLTFShape("models/enemy/core/enemySpawner.glb"));
 
             //animations
             //  controller

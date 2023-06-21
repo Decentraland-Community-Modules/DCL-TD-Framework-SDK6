@@ -24,7 +24,7 @@ export class EnemyUnitManager extends Entity
     }
 
     //max allowed count of units allowed
-    private enemySizeMax:number = 80;
+    private enemySizeMax:number = 35;
     //number of enemies in use
     enemySizeCur:number = 0;
     //number of enemies remaining in wave

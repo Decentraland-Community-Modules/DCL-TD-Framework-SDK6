@@ -38,8 +38,8 @@ export class GameMenu
         //3D main menu
         this.menuGroupMainMenu = new MenuGroup3D();
         this.menuGroupMainMenu.SetColour(new Color3(1,0,1));
-        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(44,0,32));
-        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,90,0));
+        this.menuGroupMainMenu.AdjustMenuParent(0,new Vector3(16,0,30));
+        this.menuGroupMainMenu.AdjustMenuParent(2,new Vector3(0,0,0));
         this.menuMainSetup();
 
         //3D tower menu
@@ -49,11 +49,11 @@ export class GameMenu
         this.menuTowerSetup();
 
         //3D info menu
-        this.menuGroupSceneInfo = new MenuGroup3D();
+        /*this.menuGroupSceneInfo = new MenuGroup3D();
         this.menuGroupSceneInfo.SetColour(new Color3(1,0,1));
         this.menuGroupSceneInfo.AdjustMenuParent(0,new Vector3(20,0,20));
         this.menuGroupSceneInfo.AdjustMenuParent(2,new Vector3(0,0,0));
-        this.menuTutorialSetup();
+        this.menuTutorialSetup();*/
     }
 
     //2D HUD
@@ -1292,7 +1292,7 @@ export class GameMenu
     }
 
     //3D scene info/how to play
-    menuGroupSceneInfo:MenuGroup3D;
+    /*menuGroupSceneInfo:MenuGroup3D;
     //  setup
     private menuTutorialSetup()
     {
@@ -1371,23 +1371,6 @@ export class GameMenu
             this.menuGroupSceneInfo.AddMenuObject("buttonScene"+i, 5, "infoFrame");
             this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 0, pos);
             this.menuGroupSceneInfo.AdjustMenuObject("buttonScene"+i, 1, new Vector3(0.22,0.18,0.2));
-            /*this.menuGroupSceneInfo.GetMenuObject("buttonScene"+i).addComponent
-            (
-                new OnPointerDown
-                (
-                    (e) =>
-                    {
-                    //open link
-                    openExternalURL("");
-                    },
-                    {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] CREATOR_NAME_"+i,
-                    distance: 8
-                    }
-                )
-            );*/
             //  button creator text
             this.menuGroupSceneInfo.AddMenuText("buttonScene"+i, "buttonText", this.stringsSceneNames[i]);
             this.menuGroupSceneInfo.AdjustTextObject("buttonScene"+i, "buttonText", 0, new Vector3(0,0,-0.031));
@@ -1481,23 +1464,6 @@ export class GameMenu
             this.menuGroupSceneInfo.AddMenuObject("buttonCreator"+i, 5, "creditFrame");
             this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 0, pos);
             this.menuGroupSceneInfo.AdjustMenuObject("buttonCreator"+i, 1, new Vector3(0.22,0.2,0.2));
-            /*this.menuGroupSceneInfo.GetMenuObject("buttonCreator"+i).addComponent
-            (
-                new OnPointerDown
-                (
-                    (e) =>
-                    {
-                    //open link
-                    openExternalURL("");
-                    },
-                    {
-                    button: ActionButton.ANY,
-                    showFeedback: true,
-                    hoverText: "[E] CREATOR_NAME_"+i,
-                    distance: 8
-                    }
-                )
-            );*/
             //  button creator text
             this.menuGroupSceneInfo.AddMenuText("buttonCreator"+i, "buttonText", this.stringsCreators[i]);
             this.menuGroupSceneInfo.AdjustTextObject("buttonCreator"+i, "buttonText", 0, new Vector3(0,0,-0.031));
@@ -1529,5 +1495,5 @@ export class GameMenu
         "DemiDesign",
         "Emilie",
         "Finegrapgh",
-    ];
+    ];*/
 }
